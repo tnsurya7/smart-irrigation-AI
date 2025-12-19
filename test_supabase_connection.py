@@ -97,7 +97,7 @@ def test_insert_sample_data():
             "flow_rate": 0.0,
             "total_liters": 0.0,
             "pump_status": 0,
-            "mode": "AUTO",
+            "mode": "auto",
             "rain_expected": False,
             "source": "test"
         }

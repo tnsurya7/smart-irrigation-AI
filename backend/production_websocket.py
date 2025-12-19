@@ -184,7 +184,7 @@ class ConnectionManager:
                 "flow_rate": float(data.get('flow', 0)),
                 "total_liters": float(data.get('total', 0)),
                 "pump_status": int(data.get('pump', 0)),
-                "mode": str(data.get('mode', 'AUTO')).upper(),
+                "mode": str(data.get('mode', 'auto')).lower(),
                 "rain_expected": bool(data.get('rain_expected', False)),
                 "source": "esp32"
             }
@@ -218,14 +218,14 @@ class ConnectionManager:
         """Check and log irrigation events"""
         try:
             pump_status = data.get('pump_status', 0)
-            mode = data.get('mode', 'AUTO')
+            mode = data.get('mode', 'auto')
             soil_moisture = data.get('soil_moisture', 0)
             
             # Determine event type based on pump status change
             # This is simplified - in production, you'd track state changes
             if pump_status == 1:
-                event_type = "auto_start" if mode == "AUTO" else "manual_start"
-                trigger_reason = f"Soil moisture: {soil_moisture}%" if mode == "AUTO" else "Manual activation"
+                event_type = "auto_start" if mode == "auto" else "manual_start"
+                trigger_reason = f"Soil moisture: {soil_moisture}%" if mode == "auto" else "Manual activation"
                 
                 # Log irrigation event
                 supabase.table('irrigation_events').insert({

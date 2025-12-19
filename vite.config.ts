@@ -32,6 +32,5 @@ export default defineConfig(({ mode }) => {
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode),
     },
-      }
-    };
+  };
 });

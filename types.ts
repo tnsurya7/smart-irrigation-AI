@@ -10,7 +10,7 @@ export interface SensorData {
   flow: number;                    // flow rate L/min from ESP32
   totalLiters: number;             // total water used L from ESP32
   pump: 0 | 1;                     // pump state: 0=OFF, 1=ON from ESP32
-  mode: "AUTO" | "MANUAL";         // irrigation mode from ESP32
+  mode: "auto" | "manual";         // irrigation mode from ESP32
   rainExpected: boolean;           // rain_expected forecast from ESP32
   predictedSoil?: number | null;   // ML predicted soil moisture (optional)
 }
