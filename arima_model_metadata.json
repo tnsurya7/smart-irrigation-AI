@@ -1,0 +1,22 @@
+{
+  "model_type": "ARIMA",
+  "parameters": {
+    "p": 3,
+    "d": 1,
+    "q": 5
+  },
+  "training_data_size": 1600,
+  "test_data_size": 400,
+  "metrics": {
+    "mse": 1.0688934942843944,
+    "rmse": 1.033873055207647,
+    "mape": 0.011406002420201898,
+    "accuracy": 98.85939975797982
+  },
+  "trained_on": "2025-12-15T14:52:59.453096",
+  "data_file": "soil_moisture_arima.csv",
+  "data_range": {
+    "start": "2024-01-01 00:00:00",
+    "end": "2024-12-31 23:59:59"
+  }
+}

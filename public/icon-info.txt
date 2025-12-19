@@ -1,0 +1,14 @@
+PWA ICONS NEEDED:
+
+To complete PWA setup, create these icon files:
+- icon-192.png (192x192 pixels)
+- icon-512.png (512x512 pixels)
+
+Use icon.svg as a template or create your own logo.
+
+Quick way to generate:
+1. Use icon.svg in an image editor
+2. Export as PNG at 192x192 and 512x512
+3. Or use online tools like https://realfavicongenerator.net/
+
+For now, the app will work but may show a default icon on install.

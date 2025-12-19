@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatbot Direct Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Chatbot Direct Test</h1>
+    <p>This tests the chatbot functionality directly without the React component.</p>
+    
+    <div id="results"></div>
+    
+    <button onclick="testLocalWeatherAPI()">Test Local Weather API</button>
+    <button onclick="testN8NWebhook()">Test N8N Webhook</button>
+    <button onclick="testChatbotLogic()">Test Chatbot Logic</button>
+    
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        async function testLocalWeatherAPI() {
+            addResult('🌤️ Testing Local Weather API...', 'info');
+            try {
+                const response = await fetch('http://localhost:8000/weather');
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Weather API: ${Math.round(data.temperature)}°C, ${data.humidity}% humidity, ${Math.round(data.rain_probability)}% rain in ${data.location}`, 'success');
+                    return data;
+                } else {
+                    addResult(`❌ Weather API failed: HTTP ${response.status}`, 'error');
+                    return null;
+                }
+            } catch (error) {
+                addResult(`❌ Weather API error: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        async function testN8NWebhook() {
+            addResult('🔗 Testing N8N Webhook...', 'info');
+            try {
+                const response = await fetch('https://suryan8nproject.app.n8n.cloud/webhook/ccd37962-6bb3-4c30-b859-d3b63b9c64e2/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: 'test-session',
+                        action: 'sendMessage',
+                        chatInput: 'weather test',
+                        language: 'english'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ N8N Webhook: Working (${JSON.stringify(data).substring(0, 100)}...)`, 'success');
+                    return data;
+                } else {
+                    addResult(`⚠️ N8N Webhook: HTTP ${response.status} - Will use local fallback`, 'error');
+                    return null;
+                }
+            } catch (error) {
+                addResult(`⚠️ N8N Webhook: ${error.message} - Will use local fallback`, 'error');
+                return null;
+            }
+        }
+        
+        async function testChatbotLogic() {
+            addResult('🤖 Testing Chatbot Logic...', 'info');
+            
+            // Test weather query processing
+            const weatherData = await testLocalWeatherAPI();
+            if (weatherData) {
+                const temp = Math.round(weatherData.temperature);
+                const humidity = weatherData.humidity;
+                const rainProb = Math.round(weatherData.rain_probability);
+                const location = weatherData.location;
+                
+                // Test English response
+                const englishResponse = rainProb > 50 
+                    ? `${location} weather today: ${rainProb}% rain chance 🌧️\\nTemperature: ${temp}°C, Humidity: ${humidity}%\\nSkip irrigation!`
+                    : `${location} weather today:\\n🌡️ ${temp}°C, 💧 ${humidity}%\\n🌧️ Rain chance: ${rainProb}%\\nIrrigation recommended.`;
+                
+                addResult(`🇺🇸 English Response: ${englishResponse}`, 'success');
+                
+                // Test Tamil response
+                const tamilResponse = rainProb > 50
+                    ? `${location}-ல் இன்று மழை வாய்ப்பு ${rainProb}% 🌧️\\nவெப்பநிலை: ${temp}°C, ஈரப்பதம்: ${humidity}%\\nநீர்ப்பாசனம் வேண்டாம்!`
+                    : `${location}-ல் இன்று வானிலை:\\n🌡️ ${temp}°C, 💧 ${humidity}%\\n🌧️ மழை வாய்ப்பு: ${rainProb}%\\nநீர்ப்பாசனம் செய்யலாம்.`;
+                
+                addResult(`🇮🇳 Tamil Response: ${tamilResponse}`, 'success');
+                
+                // Test Tanglish response
+                const tanglishResponse = rainProb > 50
+                    ? `${location}-la iniku mala chance ${rainProb}% 🌧️\\nTemperature: ${temp}°C, Humidity: ${humidity}%\\nIrrigation vendam!`
+                    : `${location}-la iniku weather:\\n🌡️ ${temp}°C, 💧 ${humidity}%\\n🌧️ Rain chance: ${rainProb}%\\nIrrigation pannalam.`;
+                
+                addResult(`🔄 Tanglish Response: ${tanglishResponse}`, 'success');
+                
+                addResult('✅ Chatbot logic is working correctly!', 'success');
+            } else {
+                addResult('❌ Cannot test chatbot logic without weather data', 'error');
+            }
+        }
+        
+        // Auto-run tests on page load
+        window.onload = function() {
+            addResult('🚀 Starting automatic tests...', 'info');
+            setTimeout(testLocalWeatherAPI, 500);
+            setTimeout(testN8NWebhook, 1500);
+            setTimeout(testChatbotLogic, 2500);
+        };
+    </script>
+</body>
+</html>

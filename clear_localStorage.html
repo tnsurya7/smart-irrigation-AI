@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Dashboard Data</title>
+</head>
+<body>
+    <h1>🧹 Clear Dashboard Data</h1>
+    <button onclick="clearData()">Clear All Stored Data</button>
+    <div id="status"></div>
+    
+    <script>
+        function clearData() {
+            localStorage.removeItem('lastSensorData');
+            document.getElementById('status').innerHTML = '✅ Cleared! Refresh dashboard to see only real data.';
+        }
+    </script>
+</body>
+</html>
