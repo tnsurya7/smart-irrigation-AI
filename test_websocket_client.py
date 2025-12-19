@@ -23,7 +23,7 @@ async def simulate_esp32():
     flow_lmin = 0.0
     total_l = 0.0
     pump = 0         # Pump OFF initially
-    mode = "AUTO"
+    mode = "auto"
     
     try:
         async with websockets.connect(uri) as websocket:

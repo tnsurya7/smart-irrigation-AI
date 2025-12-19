@@ -104,7 +104,7 @@ class SensorDataModel(BaseModel):
     flow_rate: float = Field(..., ge=0)
     total_liters: float = Field(..., ge=0)
     pump_status: int = Field(..., ge=0, le=1)
-    mode: str = Field(..., regex="^(AUTO|MANUAL)$")
+    mode: str = Field(..., regex="^(auto|manual)$")
     rain_expected: bool = False
     source: str = Field(default="esp32", regex="^(esp32|simulation|test)$")
 
