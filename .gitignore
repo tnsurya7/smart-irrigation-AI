@@ -1,0 +1,76 @@
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Data files (keep in database, not git)
+*.csv
+*.joblib
+*.pickle
+*.pkl
+
+# Secrets
+*.pem
+*.key
+*.cert
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Model artifacts (too large for git)
+arima_*.joblib
+arimax_*.joblib
+model_*.joblib
+*.pickle
+
+# Local development
+arduino_data.log
+backend.log
+frontend.log
+telegram.log
+websocket.log
+*.log
+
+# Vercel
+.vercel
+
+# Render
+.render

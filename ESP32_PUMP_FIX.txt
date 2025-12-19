@@ -1,0 +1,83 @@
+# ESP32 PUMP COMMAND FIX - STOP REPEATED PRINTS
+
+## Problem
+- Dashboard sends ON command every second
+- ESP32 prints "Pump → ON" repeatedly
+- Serial Monitor gets spammed
+- Pump relay toggles unnecessarily
+
+## Solution
+
+Replace your ESP32 pump command handling with this:
+
+```cpp
+// OLD CODE (REMOVE THIS):
+if (msg.indexOf("\"pump\"") != -1) {
+  if (msg.indexOf("\"ON\"") != -1) {
+    digitalWrite(RELAY_PIN, HIGH);
+    Serial.println("Pump → ON (Dashboard Command)");
+  }
+  if (msg.indexOf("\"OFF\"") != -1) {
+    digitalWrite(RELAY_PIN, LOW);
+    Serial.println("Pump → OFF (Dashboard Command)");
+  }
+}
+
+// NEW CODE (USE THIS):
+if (msg.indexOf("\"pump\"") != -1) {
+  int currentPump = digitalRead(RELAY_PIN);
+  
+  if (msg.indexOf("\"ON\"") != -1 && currentPump == LOW) {
+    digitalWrite(RELAY_PIN, HIGH);
+    Serial.println("Pump → ON (Dashboard Command)");
+  }
+  
+  if (msg.indexOf("\"OFF\"") != -1 && currentPump == HIGH) {
+    digitalWrite(RELAY_PIN, LOW);
+    Serial.println("Pump → OFF (Dashboard Command)");
+  }
+}
+```
+
+## What This Does
+
+✅ Checks current pump state before changing
+✅ Only prints when state actually changes
+✅ Prevents repeated ON when already ON
+✅ Prevents repeated OFF when already OFF
+✅ Stops Serial Monitor spam
+✅ Reduces unnecessary relay switching
+
+## Dashboard Fix (Already Applied)
+
+The dashboard now also prevents repeated commands:
+- Tracks last pump state
+- 8-second cooldown between commands
+- Only sends when state needs to change
+
+## Result
+
+Before Fix:
+- Dashboard: ON ON ON ON ON (every second)
+- ESP32: "Pump → ON" x100 times
+- Serial Monitor: Flooded with messages
+
+After Fix:
+- Dashboard: ON (once)
+- ESP32: "Pump → ON" (once)
+- Serial Monitor: Clean and readable
+- System: Stable and efficient
+
+## Upload Instructions
+
+1. Open your ESP32 code in Arduino IDE
+2. Find the pump command handling section
+3. Replace with the new code above
+4. Upload to ESP32
+5. Open Serial Monitor
+6. Test pump commands from dashboard
+7. Verify: Only one print per state change
+
+✅ Fix applied to dashboard
+✅ ESP32 code snippet provided
+✅ System ready for clean operation

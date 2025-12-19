@@ -1,0 +1,455 @@
+/* Academic Project Styling */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  
+  /* Academic Color Palette */
+  --academic-primary: #059669; /* Green-600 */
+  --academic-secondary: #2563eb; /* Blue-600 */
+  --academic-accent: #0891b2; /* Cyan-600 */
+  --academic-neutral: #475569; /* Slate-600 */
+  --academic-light: #f8fafc; /* Slate-50 */
+  --academic-dark: #0f172a; /* Slate-900 */
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--academic-dark);
+  color: var(--academic-light);
+  cursor: url('/leaf-cursor.svg') 12 12, auto;
+}
+
+#root {
+  width: 100%;
+  margin: 0 auto;
+  text-align: left;
+}
+
+/* Professional Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Animation Classes */
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.6s ease-out forwards;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.6s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.6s ease-out forwards;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Professional Card Styling */
+.academic-card {
+  @apply bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-700/50 transition-all duration-300;
+}
+
+.academic-card:hover {
+  @apply shadow-xl scale-[1.02] border-slate-600/50;
+}
+
+/* Enhanced Card Effects */
+.card-glow {
+  @apply relative overflow-hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-glow::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent;
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.card-glow:hover::before {
+  transform: translateX(100%);
+}
+
+.card-glow:hover {
+  @apply shadow-2xl;
+  transform: translateY(-2px) scale(1.02);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Enhanced Button Hover Effects */
+.btn-hover {
+  @apply transition-all duration-300 ease-out;
+  cursor: url('/leaf-cursor.svg') 12 12, pointer !important;
+}
+
+.btn-hover:hover {
+  @apply shadow-lg;
+  transform: translateY(-1px);
+  cursor: url('/leaf-cursor-hover.svg') 14 14, pointer !important;
+}
+
+.btn-hover:active {
+  transform: translateY(0) scale(0.98);
+  cursor: url('/leaf-cursor-hover.svg') 14 14, pointer !important;
+}
+
+/* Icon Hover Effects */
+.icon-hover {
+  @apply transition-all duration-300 ease-out;
+  cursor: url('/leaf-cursor.svg') 12 12, pointer !important;
+}
+
+.icon-hover:hover {
+  transform: scale(1.1) rotate(5deg);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  cursor: url('/leaf-cursor-hover.svg') 14 14, pointer !important;
+}
+
+/* Status Badge Hover Effects */
+.status-badge {
+  @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium transition-all duration-300;
+}
+
+.status-badge:hover {
+  @apply shadow-md;
+  transform: scale(1.05);
+}
+
+/* Enhanced Grid Hover Effects */
+.grid-hover > * {
+  @apply transition-all duration-300 ease-out;
+}
+
+.grid-hover > *:hover {
+  transform: translateY(-4px);
+  z-index: 10;
+}
+
+/* Professional Button Styling */
+.btn-academic-primary {
+  @apply bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105;
+}
+
+.btn-academic-secondary {
+  @apply bg-white text-slate-700 border border-slate-300 px-6 py-3 rounded-lg font-medium hover:bg-slate-50 transition-all duration-300;
+}
+
+/* Status Badge Styling */
+.status-badge {
+  @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.status-badge.success {
+  @apply bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300;
+}
+
+.status-badge.warning {
+  @apply bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300;
+}
+
+.status-badge.error {
+  @apply bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300;
+}
+
+.status-badge.info {
+  @apply bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300;
+}
+
+/* Academic Typography */
+.academic-title {
+  @apply text-4xl md:text-5xl lg:text-6xl font-bold text-slate-800 dark:text-white leading-tight;
+}
+
+.academic-subtitle {
+  @apply text-xl md:text-2xl font-semibold text-slate-700 dark:text-slate-300;
+}
+
+.academic-body {
+  @apply text-base text-slate-600 dark:text-slate-400 leading-relaxed;
+}
+
+.academic-caption {
+  @apply text-sm text-slate-500 dark:text-slate-500;
+}
+
+/* Form Styling */
+.academic-input {
+  @apply w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all;
+}
+
+.academic-label {
+  @apply block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2;
+}
+
+/* Loading Spinner */
+.spinner {
+  @apply w-8 h-8 border-4 border-slate-300 border-t-blue-600 rounded-full animate-spin;
+}
+
+/* Responsive Grid */
+.academic-grid {
+  @apply grid gap-6;
+}
+
+.academic-grid.cols-1 {
+  @apply grid-cols-1;
+}
+
+.academic-grid.cols-2 {
+  @apply grid-cols-1 md:grid-cols-2;
+}
+
+.academic-grid.cols-3 {
+  @apply grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+}
+
+.academic-grid.cols-4 {
+  @apply grid-cols-2 md:grid-cols-3 lg:grid-cols-4;
+}
+
+/* Smooth Transitions */
+* {
+  @apply transition-colors duration-300;
+}
+
+/* Custom Animated Cursor Styles */
+* {
+  cursor: url('/leaf-cursor.svg') 12 12, auto;
+  transition: cursor 0.2s ease;
+}
+
+button, 
+a, 
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="checkbox"],
+input[type="radio"],
+select,
+.cursor-pointer {
+  cursor: url('/leaf-cursor.svg') 12 12, pointer !important;
+  transition: cursor 0.2s ease;
+}
+
+button:hover, 
+a:hover, 
+[role="button"]:hover,
+input[type="button"]:hover,
+input[type="submit"]:hover,
+input[type="checkbox"]:hover,
+input[type="radio"]:hover,
+select:hover,
+.cursor-pointer:hover {
+  cursor: url('/leaf-cursor-hover.svg') 14 14, pointer !important;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+[contenteditable] {
+  cursor: url('/leaf-cursor.svg') 12 12, text !important;
+}
+
+.cursor-grab {
+  cursor: url('/leaf-cursor.svg') 12 12, grab !important;
+}
+
+.cursor-grabbing {
+  cursor: url('/leaf-cursor-hover.svg') 14 14, grabbing !important;
+}
+
+/* Enhanced cursor for interactive cards */
+.card-glow:hover {
+  cursor: url('/leaf-cursor-hover.svg') 14 14, pointer !important;
+}
+
+/* Focus Styles for Accessibility */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900;
+}
+
+/* Print Styles for Academic Reports */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .academic-card {
+    @apply shadow-none border border-slate-300;
+  }
+  
+  body {
+    @apply bg-white text-slate-900;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+  .academic-title {
+    @apply text-3xl;
+  }
+  
+  .academic-subtitle {
+    @apply text-lg;
+  }
+  
+  .btn-academic-primary,
+  .btn-academic-secondary {
+    @apply px-4 py-2 text-sm;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .academic-card {
+    @apply border-2 border-slate-900 dark:border-white;
+  }
+  
+  .btn-academic-primary {
+    @apply bg-slate-900 border-2 border-slate-900;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-scale-in,
+  .animate-pulse,
+  .animate-bounce {
+    animation: none;
+  }
+  
+  * {
+    transition: none !important;
+  }
+}

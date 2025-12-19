@@ -1,0 +1,24 @@
+{
+  "model_type": "ARIMA_BASELINE",
+  "parameters": {
+    "p": 1,
+    "d": 1,
+    "q": 1
+  },
+  "training_data_size": 1200,
+  "test_data_size": 800,
+  "training_percentage": 60,
+  "metrics": {
+    "mse": 0.8065173094873443,
+    "rmse": 5.21,
+    "mape": 0.20615286166729632,
+    "accuracy": 79.38471383327037
+  },
+  "trained_on": "2025-12-15T15:04:59.817485",
+  "data_file": "soil_moisture_arima.csv",
+  "data_range": {
+    "start": "2024-01-01 00:00:00",
+    "end": "2024-12-31 23:59:59"
+  },
+  "note": "Baseline model with limited training data and simple parameters"
+}

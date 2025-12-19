@@ -1,0 +1,41 @@
+{
+  "name": "smart-agriculture-arduino-bridge",
+  "version": "1.0.0",
+  "description": "Arduino to WebSocket bridge for Smart Agriculture Dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite --mode development",
+    "build": "vite build --mode production",
+    "build:prod": "NODE_ENV=production vite build",
+    "preview": "vite preview",
+    "serve": "vite preview --port 3000",
+    "arduino-bridge": "node server.js",
+    "backend": "cd backend && python production_backend.py",
+    "websocket": "cd backend && python production_websocket.py",
+    "telegram": "python telegram_bot_simple.py",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.1.2",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "recharts": "^3.6.0",
+    "serialport": "^12.0.0",
+    "vite": "^7.3.0",
+    "ws": "^8.18.3"
+  },
+  "keywords": [
+    "arduino",
+    "websocket",
+    "agriculture",
+    "iot"
+  ],
+  "author": "Smart Agriculture Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3"
+  }
+}

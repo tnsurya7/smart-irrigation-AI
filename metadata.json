@@ -1,0 +1,5 @@
+{
+  "name": "Smart Agriculture Dashboard",
+  "description": "A real-time dashboard to monitor environmental and irrigation parameters for smart farming. It displays data from various sensors and allows for remote control of the irrigation system.",
+  "requestFramePermissions": []
+}

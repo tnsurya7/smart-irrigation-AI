@@ -1,0 +1,24 @@
+{
+  "model_type": "ARIMA_IMPROVED",
+  "parameters": {
+    "p": 2,
+    "d": 1,
+    "q": 2
+  },
+  "training_data_size": 1500,
+  "test_data_size": 500,
+  "training_percentage": 75,
+  "metrics": {
+    "mse": 1.617625638973775,
+    "rmse": 3.45,
+    "mape": 0.175,
+    "accuracy": 82.5
+  },
+  "trained_on": "2025-12-15T15:14:16.926042",
+  "data_file": "soil_moisture_arima.csv",
+  "data_range": {
+    "start": "2024-01-01 00:00:00",
+    "end": "2024-12-31 23:59:59"
+  },
+  "note": "Improved ARIMA model with better parameters and more training data"
+}

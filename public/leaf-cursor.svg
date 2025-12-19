@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <defs>
+    <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1">
+        <animate attributeName="stop-color" values="#22c55e;#16a34a;#22c55e" dur="3s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1">
+        <animate attributeName="stop-color" values="#16a34a;#15803d;#16a34a" dur="3s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Main leaf body with gentle sway animation -->
+  <g transform-origin="12 12">
+    <animateTransform 
+      attributeName="transform" 
+      type="rotate" 
+      values="0 12 12;2 12 12;0 12 12;-2 12 12;0 12 12" 
+      dur="4s" 
+      repeatCount="indefinite"/>
+    
+    <path d="M6 20c0-8 4-12 12-16 4 8 4 16-4 20-4-1-8-2-8-4z" 
+          fill="url(#leafGradient)" 
+          stroke="#15803d" 
+          stroke-width="1"
+          filter="url(#glow)">
+      <!-- Subtle scale pulse -->
+      <animateTransform 
+        attributeName="transform" 
+        type="scale" 
+        values="1;1.05;1;0.98;1" 
+        dur="5s" 
+        repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Leaf vein with shimmer effect -->
+    <path d="M10 16c2-4 6-6 8-8" 
+          stroke="#15803d" 
+          stroke-width="1" 
+          stroke-linecap="round"
+          opacity="0.8">
+      <animate attributeName="opacity" values="0.8;1;0.8;0.6;0.8" dur="3s" repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Enhanced sparkle effects -->
+    <!-- Main sparkle 1 -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite" begin="0s"/>
+      <circle cx="14" cy="12" r="0.8" fill="#34d399">
+        <animate attributeName="r" values="0.3;1.2;0.3" dur="1.8s" repeatCount="indefinite" begin="0s"/>
+      </circle>
+      <circle cx="14" cy="12" r="0.4" fill="#ffffff" opacity="0.8">
+        <animate attributeName="r" values="0.1;0.6;0.1" dur="1.8s" repeatCount="indefinite" begin="0s"/>
+      </circle>
+    </g>
+    
+    <!-- Main sparkle 2 -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0.9;0" dur="2.2s" repeatCount="indefinite" begin="0.8s"/>
+      <circle cx="11" cy="15" r="0.6" fill="#6ee7b7">
+        <animate attributeName="r" values="0.2;1;0.2" dur="2.2s" repeatCount="indefinite" begin="0.8s"/>
+      </circle>
+      <circle cx="11" cy="15" r="0.3" fill="#ffffff" opacity="0.7">
+        <animate attributeName="r" values="0.1;0.5;0.1" dur="2.2s" repeatCount="indefinite" begin="0.8s"/>
+      </circle>
+    </g>
+    
+    <!-- Sparkle 3 -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0.8;0" dur="1.5s" repeatCount="indefinite" begin="1.5s"/>
+      <circle cx="16" cy="9" r="0.4" fill="#a7f3d0">
+        <animate attributeName="r" values="0.2;0.8;0.2" dur="1.5s" repeatCount="indefinite" begin="1.5s"/>
+      </circle>
+      <circle cx="16" cy="9" r="0.2" fill="#ffffff" opacity="0.9">
+        <animate attributeName="r" values="0.1;0.4;0.1" dur="1.5s" repeatCount="indefinite" begin="1.5s"/>
+      </circle>
+    </g>
+    
+    <!-- Sparkle 4 -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0.7;0" dur="2.8s" repeatCount="indefinite" begin="0.3s"/>
+      <circle cx="9" cy="13" r="0.3" fill="#10b981">
+        <animate attributeName="r" values="0.1;0.6;0.1" dur="2.8s" repeatCount="indefinite" begin="0.3s"/>
+      </circle>
+      <circle cx="9" cy="13" r="0.15" fill="#ffffff" opacity="0.8">
+        <animate attributeName="r" values="0.05;0.3;0.05" dur="2.8s" repeatCount="indefinite" begin="0.3s"/>
+      </circle>
+    </g>
+    
+    <!-- Sparkle 5 -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0.6;0" dur="2s" repeatCount="indefinite" begin="2s"/>
+      <circle cx="17" cy="14" r="0.35" fill="#22c55e">
+        <animate attributeName="r" values="0.15;0.7;0.15" dur="2s" repeatCount="indefinite" begin="2s"/>
+      </circle>
+      <circle cx="17" cy="14" r="0.18" fill="#ffffff" opacity="0.6">
+        <animate attributeName="r" values="0.08;0.35;0.08" dur="2s" repeatCount="indefinite" begin="2s"/>
+      </circle>
+    </g>
+    
+    <!-- Tiny twinkling sparkles -->
+    <circle cx="13" cy="10" r="0.15" fill="#ffffff" opacity="0">
+      <animate attributeName="opacity" values="0;1;0" dur="0.8s" repeatCount="indefinite" begin="0.5s"/>
+    </circle>
+    
+    <circle cx="15" cy="16" r="0.12" fill="#ffffff" opacity="0">
+      <animate attributeName="opacity" values="0;0.8;0" dur="1.2s" repeatCount="indefinite" begin="1.8s"/>
+    </circle>
+    
+    <circle cx="10" cy="11" r="0.1" fill="#ffffff" opacity="0">
+      <animate attributeName="opacity" values="0;0.9;0" dur="1s" repeatCount="indefinite" begin="2.5s"/>
+    </circle>
+    
+    <!-- Star-like sparkles -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;1;0" dur="1.6s" repeatCount="indefinite" begin="1.2s"/>
+      <path d="M12,8 L12.3,8.7 L13,9 L12.3,9.3 L12,10 L11.7,9.3 L11,9 L11.7,8.7 Z" fill="#ffffff" opacity="0.9">
+        <animateTransform attributeName="transform" type="rotate" values="0 12 9;360 12 9" dur="1.6s" repeatCount="indefinite" begin="1.2s"/>
+      </path>
+    </g>
+    
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0.8;0" dur="2.4s" repeatCount="indefinite" begin="0.6s"/>
+      <path d="M18,11 L18.2,11.5 L18.7,11.7 L18.2,11.9 L18,12.4 L17.8,11.9 L17.3,11.7 L17.8,11.5 Z" fill="#34d399" opacity="0.8">
+        <animateTransform attributeName="transform" type="rotate" values="0 18 12;-360 18 12" dur="2.4s" repeatCount="indefinite" begin="0.6s"/>
+      </path>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,41 @@
+import pandas as pd
+import numpy as np
+
+# 1. Create 2000 timestamps across full year 2024
+timestamps = pd.date_range(
+    start="2024-01-01",
+    end="2024-12-31 23:59:59",
+    periods=2000
+)
+
+# 2. Generate realistic soil moisture values
+np.random.seed(42)
+soil_moisture = []
+current_value = 55.0  # starting moisture %
+
+for _ in range(2000):
+    # natural evaporation
+    change = np.random.normal(loc=-0.015, scale=0.25)
+    
+    # occasional rain / irrigation
+    if np.random.rand() < 0.04:
+        change += np.random.uniform(2, 6)
+    
+    current_value += change
+    
+    # clamp values between 30% and 80%
+    current_value = max(30, min(80, current_value))
+    soil_moisture.append(round(current_value, 2))
+
+# 3. Create DataFrame
+df = pd.DataFrame({
+    "timestamp": timestamps,
+    "soil_moisture": soil_moisture
+})
+
+# 4. Save CSV
+df.to_csv("soil_moisture_arima.csv", index=False)
+print("CSV generated successfully with 2000 rows (Jan–Dec 2024)")
+print(f"Data range: {df['timestamp'].min()} to {df['timestamp'].max()}")
+print(f"Soil moisture range: {df['soil_moisture'].min()}% to {df['soil_moisture'].max()}%")
+print(f"Total rows: {len(df)}")
