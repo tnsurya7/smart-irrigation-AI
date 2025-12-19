@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Database Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 Smart Agriculture Dashboard - Database Test</h1>
+        <p>This tool tests your Supabase database connection and verifies the schema setup.</p>
+        
+        <div class="test-result info">
+            <strong>📋 Database Configuration:</strong><br>
+            URL: https://zkqhyojleofjngbfeses.supabase.co<br>
+            Status: Ready for testing
+        </div>
+
+        <button onclick="testConnection()">🔗 Test Connection</button>
+        <button onclick="testTables()">📊 Check Tables</button>
+        <button onclick="testInsertData()">🧪 Test Data Insert</button>
+        <button onclick="testModelMetrics()">🤖 Check AI Models</button>
+        <button onclick="clearResults()">🧹 Clear Results</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://zkqhyojleofjngbfeses.supabase.co';
+        const SUPABASE_ANON_KEY = '***REMOVED***';
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testConnection() {
+            addResult('🔗 Testing Supabase connection...', 'info');
+            
+            try {
+                // Test basic connection
+                const { data, error } = await supabase
+                    .from('sensor_data')
+                    .select('count')
+                    .limit(1);
+
+                if (error) {
+                    addResult(`❌ Connection failed: ${error.message}`, 'error');
+                } else {
+                    addResult('✅ Supabase connection successful!', 'success');
+                    addResult(`📊 Database URL: ${SUPABASE_URL}`, 'info');
+                }
+            } catch (err) {
+                addResult(`❌ Connection error: ${err.message}`, 'error');
+            }
+        }
+
+        async function testTables() {
+            addResult('📊 Checking database tables...', 'info');
+            
+            const tables = [
+                'sensor_data',
+                'irrigation_events',
+                'rain_events', 
+                'model_metrics',
+                'system_status',
+                'user_sessions'
+            ];
+
+            let existingTables = [];
+
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase
+                        .from(table)
+                        .select('*')
+                        .limit(1);
+
+                    if (error) {
+                        addResult(`❌ Table '${table}' missing or inaccessible`, 'error');
+                    } else {
+                        addResult(`✅ Table '${table}' exists and accessible`, 'success');
+                        existingTables.push(table);
+                    }
+                } catch (err) {
+                    addResult(`❌ Error checking table '${table}': ${err.message}`, 'error');
+                }
+            }
+
+            addResult(`📈 Tables found: ${existingTables.length}/${tables.length}`, 'info');
+            
+            if (existingTables.length === 0) {
+                addResult('⚠️ No tables found! Please run the database schema in Supabase SQL Editor.', 'error');
+            } else if (existingTables.length < tables.length) {
+                addResult('⚠️ Some tables are missing. Consider re-running the schema.', 'error');
+            } else {
+                addResult('🎉 All tables are present and accessible!', 'success');
+            }
+        }
+
+        async function testInsertData() {
+            addResult('🧪 Testing data insertion...', 'info');
+            
+            try {
+                // Test sensor data insertion
+                const sampleData = {
+                    soil_moisture: 65.5,
+                    temperature: 28.3,
+                    humidity: 72.1,
+                    rain_raw: 3800,
+                    rain_detected: false,
+                    light_raw: 450,
+                    light_percent: 75.2,
+                    light_state: 'normal',
+                    flow_rate: 0.0,
+                    total_liters: 0.0,
+                    pump_status: 0,
+                    mode: 'AUTO',
+                    rain_expected: false,
+                    source: 'test'
+                };
+
+                const { data, error } = await supabase
+                    .from('sensor_data')
+                    .insert([sampleData])
+                    .select();
+
+                if (error) {
+                    addResult(`❌ Data insertion failed: ${error.message}`, 'error');
+                } else {
+                    addResult('✅ Sample data inserted successfully!', 'success');
+                    addResult(`📝 Inserted record ID: ${data[0].id}`, 'info');
+                    
+                    // Clean up - delete the test record
+                    await supabase
+                        .from('sensor_data')
+                        .delete()
+                        .eq('source', 'test');
+                    
+                    addResult('🧹 Test data cleaned up', 'info');
+                }
+            } catch (err) {
+                addResult(`❌ Error testing data insertion: ${err.message}`, 'error');
+            }
+        }
+
+        async function testModelMetrics() {
+            addResult('🤖 Checking AI model metrics...', 'info');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('model_metrics')
+                    .select('*')
+                    .order('timestamp', { ascending: false });
+
+                if (error) {
+                    addResult(`❌ Model metrics query failed: ${error.message}`, 'error');
+                } else if (data.length === 0) {
+                    addResult('⚠️ No model metrics found. Initial data may not be inserted.', 'error');
+                } else {
+                    addResult(`✅ Found ${data.length} model metric records`, 'success');
+                    
+                    // Display model performance
+                    const activeModels = data.filter(m => m.is_active);
+                    if (activeModels.length > 0) {
+                        addResult('📊 Active AI Models:', 'info');
+                        activeModels.forEach(model => {
+                            addResult(`🎯 ${model.model_name}: ${model.accuracy_percent}% accuracy, RMSE: ${model.rmse}`, 'success');
+                        });
+                    }
+                    
+                    // Show sample data
+                    addResult('<pre>' + JSON.stringify(data[0], null, 2) + '</pre>', 'info');
+                }
+            } catch (err) {
+                addResult(`❌ Error checking model metrics: ${err.message}`, 'error');
+            }
+        }
+
+        // Auto-test connection on page load
+        window.addEventListener('load', () => {
+            setTimeout(testConnection, 1000);
+        });
+    </script>
+</body>
+</html>

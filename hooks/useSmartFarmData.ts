@@ -31,7 +31,7 @@ export default function useSmartFarmData() {
     flow: 0,
     totalLiters: 0,
     pump: 0,
-    mode: "AUTO",
+    mode: "auto",
     rainExpected: false,
   });
   
@@ -148,7 +148,7 @@ export default function useSmartFarmData() {
             flow: typeof obj.flow === "number" ? obj.flow : 0,
             totalLiters: typeof obj.total === "number" ? obj.total : 0,
             pump: typeof obj.pump === "number" ? obj.pump : 0,
-            mode: (obj.mode === "auto" || obj.mode === "manual") ? obj.mode.toUpperCase() : "AUTO",
+            mode: (obj.mode === "auto" || obj.mode === "manual") ? obj.mode : "auto",
             rainExpected: Boolean(obj.rain_expected),
           };
           
@@ -194,7 +194,7 @@ export default function useSmartFarmData() {
   }, [wsEnabled]);
 
   // Send mode command to ESP32 and update local state
-  const setMode = (newMode: "AUTO" | "MANUAL") => {
+  const setMode = (newMode: "auto" | "manual") => {
     // Update local state immediately for better UX
     setData(prev => ({
       ...prev,
@@ -204,7 +204,7 @@ export default function useSmartFarmData() {
     // Send command to ESP32 if connected
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       const command = {
-        mode: newMode.toLowerCase() // "auto" or "manual"
+        mode: newMode // "auto" or "manual"
       };
       wsRef.current.send(JSON.stringify(command));
       console.log("📤 Mode command sent to ESP32:", command);

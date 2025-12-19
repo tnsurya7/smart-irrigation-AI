@@ -1,8 +1,5 @@
--- Smart Agriculture Dashboard - Production-Perfect Supabase Schema
--- Fixes applied: pgcrypto extension, lowercase mode, unique constraints
-
--- REQUIRED FIX 1: Enable pgcrypto extension for gen_random_uuid()
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- Smart Agriculture Dashboard - Supabase Database Schema (Fixed)
+-- Run this in Supabase SQL Editor to create production tables
 
 -- Create sensor_data table for real-time ESP32 data
 CREATE TABLE IF NOT EXISTS sensor_data (
@@ -19,11 +16,9 @@ CREATE TABLE IF NOT EXISTS sensor_data (
     flow_rate DECIMAL(8,2) NOT NULL DEFAULT 0 CHECK (flow_rate >= 0),
     total_liters DECIMAL(10,2) NOT NULL DEFAULT 0 CHECK (total_liters >= 0),
     pump_status INTEGER NOT NULL DEFAULT 0 CHECK (pump_status IN (0, 1)),
-    -- REQUIRED FIX 2: Lowercase mode to match ESP32 output
-    mode VARCHAR(10) NOT NULL DEFAULT 'auto' CHECK (mode IN ('auto', 'manual')),
+    mode VARCHAR(10) NOT NULL DEFAULT 'AUTO' CHECK (mode IN ('AUTO', 'MANUAL')),
     rain_expected BOOLEAN NOT NULL DEFAULT FALSE,
-    -- IMPROVEMENT 1: Flexible source (no hard enum for scalability)
-    source VARCHAR(20) NOT NULL DEFAULT 'esp32',
+    source VARCHAR(20) NOT NULL DEFAULT 'esp32' CHECK (source IN ('esp32', 'simulation', 'test')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -38,8 +33,7 @@ CREATE TABLE IF NOT EXISTS irrigation_events (
     soil_moisture_after DECIMAL(5,2),
     duration_seconds INTEGER CHECK (duration_seconds >= 0),
     water_used_liters DECIMAL(8,2) CHECK (water_used_liters >= 0),
-    -- REQUIRED FIX 2: Lowercase mode to match ESP32 output
-    mode VARCHAR(10) NOT NULL CHECK (mode IN ('auto', 'manual')),
+    mode VARCHAR(10) NOT NULL CHECK (mode IN ('AUTO', 'MANUAL')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -69,9 +63,6 @@ CREATE TABLE IF NOT EXISTS model_metrics (
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
--- REQUIRED FIX 3: Add UNIQUE constraint for model_metrics ON CONFLICT
-ALTER TABLE model_metrics ADD CONSTRAINT unique_model_version UNIQUE (model_name, model_version);
 
 -- Create system_status table for monitoring
 CREATE TABLE IF NOT EXISTS system_status (
@@ -135,11 +126,10 @@ CREATE POLICY "Allow all operations on system_status" ON system_status FOR ALL U
 CREATE POLICY "Allow all operations on user_sessions" ON user_sessions FOR ALL USING (true);
 
 -- Insert initial model metrics
--- Insert initial model metrics (now works with UNIQUE constraint)
 INSERT INTO model_metrics (model_name, accuracy_percent, rmse, mape, training_data_rows, model_version, is_active) VALUES
 ('ARIMA', 82.5, 3.45, 17.5, 7000, '1.0.0', false),
 ('ARIMAX', 94.6, 1.78, 5.4, 7000, '1.0.0', true)
-ON CONFLICT (model_name, model_version) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 -- Create views for common queries
 CREATE OR REPLACE VIEW latest_sensor_data AS

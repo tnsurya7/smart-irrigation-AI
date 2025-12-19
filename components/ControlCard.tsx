@@ -4,12 +4,12 @@ import { PumpIcon } from './icons';
 
 interface ControlCardProps {
   pumpStatus: 'ON' | 'OFF';
-  mode: 'AUTO' | 'MANUAL';
+  mode: 'auto' | 'manual';
   flowRate: number;
   totalLiters: number;
   predictedSoil: number;
   sendPump: (state: 'ON' | 'OFF') => void;
-  setMode: (mode: 'AUTO' | 'MANUAL') => void;
+  setMode: (mode: 'auto' | 'manual') => void;
 }
 
 export const ControlCard: React.FC<ControlCardProps> = ({ 
@@ -27,7 +27,7 @@ export const ControlCard: React.FC<ControlCardProps> = ({
   const safeFlowRate = typeof flowRate === 'number' ? flowRate : 0;
   const safeTotalLiters = typeof totalLiters === 'number' ? totalLiters : 0;
   const safePredictedSoil = typeof predictedSoil === 'number' ? predictedSoil : null;
-  const safeMode = mode || 'AUTO';
+  const safeMode = mode || 'auto';
 
   return (
     <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl border border-slate-700/50 h-[400px] flex flex-col card-glow">
@@ -67,31 +67,31 @@ export const ControlCard: React.FC<ControlCardProps> = ({
               </label>
             </div>
             <div className="flex items-center gap-3">
-              <span className={`text-xs font-medium ${safeMode === 'AUTO' ? 'text-green-400' : 'text-orange-400'}`}>
-                {safeMode === 'AUTO' ? 'ON' : 'OFF'}
+              <span className={`text-xs font-medium ${safeMode === 'auto' ? 'text-green-400' : 'text-orange-400'}`}>
+                {safeMode === 'auto' ? 'ON' : 'OFF'}
               </span>
               {/* Custom Toggle Switch */}
               <div 
                 onClick={() => {
-                  const newMode = safeMode === 'AUTO' ? 'MANUAL' : 'AUTO';
+                  const newMode = safeMode === 'auto' ? 'manual' : 'auto';
                   console.log('🔄 Changing mode from', safeMode, 'to', newMode);
                   setMode(newMode);
                 }}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full cursor-pointer transition-all duration-200 hover:scale-105 shadow-inner ${
-                  safeMode === 'AUTO' ? 'bg-green-500 shadow-green-500/30' : 'bg-slate-600 shadow-slate-600/30'
+                  safeMode === 'auto' ? 'bg-green-500 shadow-green-500/30' : 'bg-slate-600 shadow-slate-600/30'
                 }`}
-                title={`Click to turn Auto Irrigation ${safeMode === 'AUTO' ? 'OFF' : 'ON'}`}
+                title={`Click to turn Auto Irrigation ${safeMode === 'auto' ? 'OFF' : 'ON'}`}
               >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-all duration-200 ${
-                    safeMode === 'AUTO' ? 'translate-x-6' : 'translate-x-1'
+                    safeMode === 'auto' ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </div>
             </div>
           </div>
           <p className="text-xs text-slate-400 mt-2 text-center">
-            {safeMode === 'AUTO' 
+            {safeMode === 'auto' 
               ? '🤖 ESP32 automatically controls irrigation based on soil moisture' 
               : '👤 Manual mode - You control the pump with buttons below'
             }
@@ -102,7 +102,7 @@ export const ControlCard: React.FC<ControlCardProps> = ({
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold text-slate-300">Manual Controls</p>
-            {safeMode === 'AUTO' ? (
+            {safeMode === 'auto' ? (
               <span className="text-xs text-amber-400 flex items-center gap-1">
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
@@ -121,17 +121,17 @@ export const ControlCard: React.FC<ControlCardProps> = ({
           <div className="flex items-center gap-3">
             <button
               onClick={() => sendPump('ON')}
-              disabled={safeMode === 'AUTO'}
+              disabled={safeMode === 'auto'}
               className="px-4 py-2 rounded-lg font-bold text-sm text-white transition-all duration-300 flex-1 bg-green-500 hover:bg-green-600 hover:scale-105 hover:shadow-lg disabled:bg-slate-600 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:opacity-50 active:scale-95"
-              title={safeMode === 'AUTO' ? 'Turn off Auto Mode to use manual controls' : 'Turn pump on manually'}
+              title={safeMode === 'auto' ? 'Turn off Auto Mode to use manual controls' : 'Turn pump on manually'}
             >
               Pump ON
             </button>
             <button
               onClick={() => sendPump('OFF')}
-              disabled={safeMode === 'AUTO'}
+              disabled={safeMode === 'auto'}
               className="px-4 py-2 rounded-lg font-bold text-sm text-white transition-all duration-300 flex-1 bg-red-500 hover:bg-red-600 hover:scale-105 hover:shadow-lg disabled:bg-slate-600 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:opacity-50 active:scale-95"
-              title={safeMode === 'AUTO' ? 'Turn off Auto Mode to use manual controls' : 'Turn pump off manually'}
+              title={safeMode === 'auto' ? 'Turn off Auto Mode to use manual controls' : 'Turn pump off manually'}
             >
               Pump OFF
             </button>

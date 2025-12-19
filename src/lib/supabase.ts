@@ -46,7 +46,7 @@ export interface SensorData {
   flow_rate: number;
   total_liters: number;
   pump_status: 0 | 1;
-  mode: 'AUTO' | 'MANUAL';
+  mode: 'auto' | 'manual';
   rain_expected: boolean;
   source: 'esp32' | 'simulation' | 'test';
   created_at?: string;
@@ -62,7 +62,7 @@ export interface IrrigationEvent {
   soil_moisture_after?: number;
   duration_seconds?: number;
   water_used_liters?: number;
-  mode: 'AUTO' | 'MANUAL';
+  mode: 'auto' | 'manual';
   created_at?: string;
 }
 
