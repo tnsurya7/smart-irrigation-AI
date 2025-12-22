@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -61,16 +61,31 @@ app = FastAPI(
     redoc_url="/redoc" if os.getenv('NODE_ENV') != 'production' else None,
 )
 
+# CRITICAL: Health endpoints BEFORE any middleware to bypass ALL validation
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
+def root():
+    """Root endpoint - bypasses all middleware and validation"""
+    return Response(content='{"status":"ok","service":"Smart Agriculture API"}', 
+                   media_type="application/json", status_code=200)
+
+@app.api_route("/health", methods=["GET", "HEAD"], include_in_schema=False)
+def health():
+    """Health check endpoint - bypasses all middleware and validation"""
+    return Response(content='{"status":"ok"}', 
+                   media_type="application/json", status_code=200)
+
 # Security middleware
 security = HTTPBearer()
 
 # CORS middleware with restricted origins
 if ALLOWED_ORIGINS and ALLOWED_ORIGINS[0]:
+    # Add Render internal origins for health checks
+    health_check_origins = ALLOWED_ORIGINS + ["https://smart-agriculture-backend-my7c.onrender.com"]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=ALLOWED_ORIGINS,
+        allow_origins=health_check_origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "HEAD"],
         allow_headers=["*"],
     )
 else:
@@ -139,17 +154,6 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             headers={"WWW-Authenticate": "Bearer"},
         )
     return {"user": "authenticated"}
-
-# Health check endpoint
-@app.get("/")
-def root():
-    """Root endpoint"""
-    return {"message": "Smart Agriculture API", "status": "running", "version": "1.0.0"}
-
-@app.get("/health")
-def health_check():
-    """Simple health check endpoint for Render monitoring"""
-    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
 
 # Detailed health endpoint for monitoring
 @app.get("/health/detailed")
