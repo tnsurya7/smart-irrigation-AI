@@ -100,16 +100,16 @@ class SensorDataModel(BaseModel):
     rain_detected: bool
     light_raw: int = Field(..., ge=0, le=4095)
     light_percent: float = Field(..., ge=0, le=100)
-    light_state: str = Field(..., pattern="^(dark|low|normal|very_bright)$")
+    light_state: str = Field(..., pattern=r"^(dark|low|normal|very_bright)$")
     flow_rate: float = Field(..., ge=0)
     total_liters: float = Field(..., ge=0)
     pump_status: int = Field(..., ge=0, le=1)
-    mode: str = Field(..., pattern="^(auto|manual)$")
+    mode: str = Field(..., pattern=r"^(auto|manual)$")
     rain_expected: bool = False
-    source: str = Field(default="esp32", pattern="^(esp32|simulation|test)$")
+    source: str = Field(default="esp32", pattern=r"^(esp32|simulation|test)$")
 
 class ModelMetricsModel(BaseModel):
-    model_name: str = Field(..., pattern="^(ARIMA|ARIMAX)$")
+    model_name: str = Field(..., pattern=r"^(ARIMA|ARIMAX)$")
     accuracy_percent: float = Field(..., ge=0, le=100)
     rmse: float = Field(..., ge=0)
     mape: float = Field(..., ge=0)
@@ -125,8 +125,8 @@ class WeatherDataModel(BaseModel):
     location: str = "Erode, Tamil Nadu"
 
 class SystemStatusModel(BaseModel):
-    component: str = Field(..., pattern="^(esp32|backend|websocket|telegram|weather_api)$")
-    status: str = Field(..., pattern="^(online|offline|error|warning)$")
+    component: str = Field(..., pattern=r"^(esp32|backend|websocket|telegram|weather_api)$")
+    status: str = Field(..., pattern=r"^(online|offline|error|warning)$")
     message: Optional[str] = None
     response_time_ms: Optional[int] = Field(None, ge=0)
 
@@ -144,8 +144,14 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 # Health check endpoint
 @app.get("/health")
-async def health_check():
-    """Health check endpoint for monitoring"""
+def health_check():
+    """Simple health check endpoint for Render monitoring"""
+    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
+
+# Detailed health endpoint for monitoring
+@app.get("/health/detailed")
+async def detailed_health_check():
+    """Detailed health check endpoint with database and API status"""
     try:
         # Test database connection
         result = supabase.table('sensor_data').select('id').limit(1).execute()
@@ -171,7 +177,7 @@ async def health_check():
             "version": "1.0.0"
         }
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
+        logger.error(f"Detailed health check failed: {e}")
         raise HTTPException(status_code=503, detail="Service unhealthy")
 
 # Sensor data endpoints
@@ -482,10 +488,12 @@ async def shutdown_event():
 
 # Run server
 if __name__ == "__main__":
+    # Use Render's dynamic PORT environment variable
+    port = int(os.getenv('PORT', 8000))
     uvicorn.run(
         "production_backend:app",
-        host=HOST,
-        port=PORT,
+        host="0.0.0.0",
+        port=port,
         reload=False,
         access_log=True,
         log_level="info"
