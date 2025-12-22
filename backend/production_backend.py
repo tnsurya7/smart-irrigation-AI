@@ -14,6 +14,8 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status, Re
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import PlainTextResponse
+from starlette.requests import Request
 from pydantic import BaseModel, Field
 import uvicorn
 from supabase import create_client, Client
@@ -60,6 +62,17 @@ app = FastAPI(
     docs_url="/docs" if os.getenv('NODE_ENV') != 'production' else None,
     redoc_url="/redoc" if os.getenv('NODE_ENV') != 'production' else None,
 )
+
+# CRITICAL: Render health check bypass at ASGI level - MUST BE FIRST MIDDLEWARE
+@app.middleware("http")
+async def render_healthcheck_bypass(request: Request, call_next):
+    if request.method == "HEAD":
+        return PlainTextResponse("", status_code=200)
+    
+    if request.url.path in ("/", "/health"):
+        return PlainTextResponse("ok", status_code=200)
+    
+    return await call_next(request)
 
 # CRITICAL: Health endpoints BEFORE any middleware - using direct Response
 @app.get("/", include_in_schema=False)
