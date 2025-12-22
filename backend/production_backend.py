@@ -100,16 +100,16 @@ class SensorDataModel(BaseModel):
     rain_detected: bool
     light_raw: int = Field(..., ge=0, le=4095)
     light_percent: float = Field(..., ge=0, le=100)
-    light_state: str = Field(..., regex="^(dark|low|normal|very_bright)$")
+    light_state: str = Field(..., pattern="^(dark|low|normal|very_bright)$")
     flow_rate: float = Field(..., ge=0)
     total_liters: float = Field(..., ge=0)
     pump_status: int = Field(..., ge=0, le=1)
-    mode: str = Field(..., regex="^(auto|manual)$")
+    mode: str = Field(..., pattern="^(auto|manual)$")
     rain_expected: bool = False
-    source: str = Field(default="esp32", regex="^(esp32|simulation|test)$")
+    source: str = Field(default="esp32", pattern="^(esp32|simulation|test)$")
 
 class ModelMetricsModel(BaseModel):
-    model_name: str = Field(..., regex="^(ARIMA|ARIMAX)$")
+    model_name: str = Field(..., pattern="^(ARIMA|ARIMAX)$")
     accuracy_percent: float = Field(..., ge=0, le=100)
     rmse: float = Field(..., ge=0)
     mape: float = Field(..., ge=0)
@@ -125,8 +125,8 @@ class WeatherDataModel(BaseModel):
     location: str = "Erode, Tamil Nadu"
 
 class SystemStatusModel(BaseModel):
-    component: str = Field(..., regex="^(esp32|backend|websocket|telegram|weather_api)$")
-    status: str = Field(..., regex="^(online|offline|error|warning)$")
+    component: str = Field(..., pattern="^(esp32|backend|websocket|telegram|weather_api)$")
+    status: str = Field(..., pattern="^(online|offline|error|warning)$")
     message: Optional[str] = None
     response_time_ms: Optional[int] = Field(None, ge=0)
 
