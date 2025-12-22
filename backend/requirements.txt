@@ -1,43 +1,11 @@
-# Production Backend Requirements
-# Core FastAPI and WebSocket
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-websockets==12.0
-python-multipart==0.0.6
-
-# Database
-supabase==2.0.2
-psycopg2-binary==2.9.9
-
-# Data Science & ML
+# Production Backend Requirements - Python 3.11 Compatible
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+gunicorn==21.2.0
 pandas==2.1.4
-numpy==1.24.4
-scikit-learn==1.3.2
-statsmodels==0.14.0
-pmdarima==2.0.4
-joblib==1.3.2
-
-# HTTP Requests
-requests==2.31.0
-httpx==0.25.2
-
-# Environment & Configuration
+numpy==1.26.4
+scikit-learn==1.4.2
+statsmodels==0.14.1
 python-dotenv==1.0.0
-pydantic==2.5.0
-
-# Security
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-
-# Monitoring & Logging
-structlog==23.2.0
-
-# Telegram Bot
-python-telegram-bot==20.7
-
-# Scheduling
-schedule==1.2.0
-
-# Development (optional)
-pytest==7.4.3
-pytest-asyncio==0.21.1
+requests==2.32.0
+supabase==2.8.0
