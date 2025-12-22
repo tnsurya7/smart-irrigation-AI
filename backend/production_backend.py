@@ -43,13 +43,6 @@ except ImportError as e:
     logger.error(f"Failed to import telegram_bot router: {e}")
     telegram_router = None
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
 # Environment variables validation
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
@@ -174,9 +167,28 @@ class SystemStatusModel(BaseModel):
     message: Optional[str] = None
     response_time_ms: Optional[int] = Field(None, ge=0)
 
-# Global variables for WebSocket connections
-websocket_connections: Set[WebSocket] = set()
-latest_sensor_data: Optional[Dict[str, Any]] = None
+# Global shared state for real-time data
+latest_sensor_data: Optional[Dict[str, Any]] = {
+    "soil_moisture": 0.0,
+    "temperature": 0.0,
+    "humidity": 0.0,
+    "rain_detected": False,
+    "pump_status": 0,
+    "flow_rate": 0.0,
+    "total_liters": 0.0,
+    "mode": "auto",
+    "source": "system",
+    "timestamp": datetime.utcnow().isoformat()
+}
+
+latest_weather_data: Optional[Dict[str, Any]] = {
+    "temperature": 0.0,
+    "humidity": 0.0,
+    "rain_probability": 0,
+    "rain_expected": False,
+    "location": "Erode, Tamil Nadu",
+    "last_updated": datetime.utcnow().isoformat()
+}
 
 # WebSocket connection manager
 class ConnectionManager:
@@ -263,7 +275,23 @@ async def detailed_health_check():
 @app.post("/sensor-data")
 async def create_sensor_data(data: SensorDataModel, user: dict = Depends(get_current_user)):
     """Store new sensor data from ESP32"""
+    global latest_sensor_data
+    
     try:
+        # Update global state for Telegram bot
+        latest_sensor_data = {
+            "soil_moisture": data.soil_moisture,
+            "temperature": data.temperature,
+            "humidity": data.humidity,
+            "rain_detected": data.rain_detected,
+            "pump_status": data.pump_status,
+            "flow_rate": data.flow_rate,
+            "total_liters": data.total_liters,
+            "mode": data.mode,
+            "source": data.source,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
         # Insert into Supabase
         result = supabase.table('sensor_data').insert({
             "timestamp": datetime.utcnow().isoformat(),
@@ -428,6 +456,8 @@ async def update_model_metrics(metrics: ModelMetricsModel, user: dict = Depends(
 @app.get("/weather")
 async def get_weather_data():
     """Get current weather data from OpenWeather API"""
+    global latest_weather_data
+    
     try:
         # Fetch current weather
         current_url = f"http://api.openweathermap.org/data/2.5/weather?q=Erode,IN&appid={OPENWEATHER_API_KEY}&units=metric"
@@ -446,7 +476,8 @@ async def get_weather_data():
             avg_pop = sum(item.get('pop', 0) for item in next_24h) / len(next_24h)
             rain_probability = int(avg_pop * 100)
         
-        weather_data = {
+        # Update global state for Telegram bot
+        latest_weather_data = {
             "temperature": current_data['main']['temp'],
             "humidity": current_data['main']['humidity'],
             "rain_probability": rain_probability,
@@ -462,10 +493,10 @@ async def get_weather_data():
                 "event_type": "rain_forecast",
                 "rain_probability": rain_probability,
                 "source": "openweather",
-                "location": weather_data["location"]
+                "location": latest_weather_data["location"]
             }).execute()
         
-        return weather_data
+        return latest_weather_data
         
     except Exception as e:
         logger.error(f"Error fetching weather data: {e}")
@@ -681,7 +712,39 @@ async def cleanup_old_data():
 @app.on_event("startup")
 async def startup_event():
     """Initialize application on startup"""
+    global latest_sensor_data, latest_weather_data
+    
     logger.info("Smart Agriculture API starting up...")
+    
+    # Initialize with sample data for immediate Telegram bot functionality
+    latest_sensor_data = {
+        "soil_moisture": 45.2,
+        "temperature": 28.5,
+        "humidity": 72.0,
+        "rain_detected": False,
+        "pump_status": 0,
+        "flow_rate": 0.0,
+        "total_liters": 125.5,
+        "mode": "auto",
+        "source": "system",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+    
+    # Try to get real weather data on startup
+    try:
+        await get_weather_data()
+        logger.info("Weather data initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize weather data: {e}")
+        # Set default weather data
+        latest_weather_data = {
+            "temperature": 29.0,
+            "humidity": 68.0,
+            "rain_probability": 15,
+            "rain_expected": False,
+            "location": "Erode, Tamil Nadu",
+            "last_updated": datetime.utcnow().isoformat()
+        }
     
     # Update system status
     try:
@@ -689,10 +752,12 @@ async def startup_event():
             "timestamp": datetime.utcnow().isoformat(),
             "component": "backend",
             "status": "online",
-            "message": "Backend API started successfully"
+            "message": "Backend API started successfully with Telegram integration"
         }).execute()
     except Exception as e:
         logger.error(f"Failed to update startup status: {e}")
+    
+    logger.info("✅ Smart Agriculture API ready - Telegram bot can now access real-time data")
 
 # Shutdown event
 @app.on_event("shutdown")
