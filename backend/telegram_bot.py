@@ -58,6 +58,9 @@ def get_sensor_data() -> Dict[str, Any]:
                 "temperature": 0.0,
                 "humidity": 0.0,
                 "rain_detected": False,
+                "light_raw": 0,
+                "light_percent": 0.0,
+                "light_state": "dark",
                 "pump_status": 0,
                 "flow_rate": 0.0,
                 "total_liters": 0.0,
@@ -167,12 +170,25 @@ The pump has been turned off."""
     elif any(cmd in text_lower for cmd in ["sensor", "data", "readings", "current", "status"]):
         sensor_data = get_sensor_data()
         if sensor_data:
+            # Format light status with emoji
+            light_state = sensor_data.get('light_state', 'unknown')
+            light_percent = sensor_data.get('light_percent', 0)
+            light_raw = sensor_data.get('light_raw', 0)
+            
+            light_emoji = {
+                'very_bright': '☀️',
+                'normal': '🌤️', 
+                'low': '🌥️',
+                'dark': '🌙'
+            }.get(light_state, '💡')
+            
             return f"""📊 **LIVE SENSOR DATA** 📊
 
 🌱 **Soil Moisture:** {sensor_data.get('soil_moisture', 0)}%
 🌡️ **Temperature:** {sensor_data.get('temperature', 0)}°C
 💨 **Humidity:** {sensor_data.get('humidity', 0)}%
 🌧️ **Rain:** {'🌧️ Detected' if sensor_data.get('rain_detected') else '☀️ Clear'}
+💡 **Light:** {light_percent}% ({light_emoji} {light_state.title()})
 🚿 **Pump:** {'🟢 ON' if sensor_data.get('pump_status') == 1 else '🔴 OFF'}
 💧 **Flow Rate:** {sensor_data.get('flow_rate', 0)} L/min
 🪣 **Total Water:** {sensor_data.get('total_liters', 0)} L
@@ -215,11 +231,22 @@ The pump has been turned off."""
         sensor_data = get_sensor_data()
         weather_data = get_weather_data()
         
+        # Format light status
+        light_state = sensor_data.get('light_state', 'unknown')
+        light_percent = sensor_data.get('light_percent', 0)
+        light_emoji = {
+            'very_bright': '☀️',
+            'normal': '🌤️', 
+            'low': '🌥️',
+            'dark': '🌙'
+        }.get(light_state, '💡')
+        
         return f"""📈 **SMART AGRICULTURE DASHBOARD** 📈
 
 **🌱 Current Farm Status:**
 • Soil Moisture: {sensor_data.get('soil_moisture', 0)}%
 • Temperature: {sensor_data.get('temperature', 0)}°C
+• Light Level: {light_percent}% ({light_emoji} {light_state.title()})
 • Pump Status: {'🟢 ON' if sensor_data.get('pump_status') == 1 else '🔴 OFF'}
 
 **🌤️ Weather Conditions:**
@@ -248,6 +275,11 @@ The pump has been turned off."""
 • `weather report` - Current weather
 • `dashboard` - System summary
 
+**🚨 Alert Commands:**
+• `threshold status` - Check alert thresholds
+• `rain status` - Rain sensor & forecast
+• `today summary` - Today's farm report
+
 **🗣️ Natural Language:**
 • "Turn on the pump"
 • "What's the weather like?"
@@ -258,9 +290,74 @@ The pump has been turned off."""
 • Commands work in English and natural language
 • Bot responds instantly via webhook
 • All data is live from your farm sensors
+• Automatic alerts for critical conditions
 
 **🆘 Support:**
 Type any command or ask naturally!"""
+
+    # New alert status commands
+    elif any(cmd in text_lower for cmd in ["threshold status", "thresholds", "alert status"]):
+        try:
+            from telegram_alerts import get_threshold_status
+            return get_threshold_status()
+        except Exception as e:
+            logger.error(f"Error getting threshold status: {e}")
+            return "❌ **Threshold status unavailable**\n\nSystem may be starting up. Try again in a moment."
+
+    elif any(cmd in text_lower for cmd in ["rain status", "rain forecast", "rain check"]):
+        try:
+            from telegram_alerts import get_rain_status
+            return get_rain_status()
+        except Exception as e:
+            logger.error(f"Error getting rain status: {e}")
+            return "❌ **Rain status unavailable**\n\nSystem may be starting up. Try again in a moment."
+
+    elif any(cmd in text_lower for cmd in ["today summary", "daily summary", "farm summary"]):
+        try:
+            from telegram_alerts import send_evening_dashboard_summary
+            # Get the summary content without sending
+            sensor_data = get_sensor_data()
+            weather_data = get_weather_data()
+            
+            soil_avg = sensor_data.get('soil_moisture', 0)
+            temp_avg = sensor_data.get('temperature', 0)
+            light_state = sensor_data.get('light_state', 'normal')
+            water_used = sensor_data.get('total_liters', 0)
+            pump_status = sensor_data.get('pump_status', 0)
+            
+            system_status = "✅ Healthy"
+            if soil_avg < 30:
+                system_status = "⚠️ Low soil moisture"
+            elif temp_avg > 35:
+                system_status = "⚠️ High temperature"
+            
+            return f"""📊 **TODAY'S FARM SUMMARY** 📊
+
+📅 **Date:** {datetime.now().strftime("%B %d, %Y")}
+
+**🌱 Current Status:**
+• Soil Moisture: {soil_avg}%
+• Temperature: {temp_avg}°C
+• Light Level: {light_state.title()}
+• Humidity: {sensor_data.get('humidity', 0)}%
+
+**💧 Water Management:**
+• Total Water Used: {water_used} L
+• Pump Status: {'🟢 ON' if pump_status == 1 else '🔴 OFF'}
+
+**🤖 System Health:**
+• Overall Status: {system_status}
+• Backend: ✅ Online
+• ARIMAX Model: ✅ Active
+
+**🌤️ Weather:**
+• Rain Probability: {weather_data.get('rain_probability', 0)}%
+
+⏰ **Report Time:** {datetime.now().strftime("%H:%M:%S")}"""
+            
+        except Exception as e:
+            logger.error(f"Error getting daily summary: {e}")
+            return "❌ **Daily summary unavailable**\n\nSystem may be starting up. Try again in a moment."
 
     # Tamil/Tanglish support
     elif any(cmd in text_lower for cmd in ["iniku", "mala", "mazhai"]):
