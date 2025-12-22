@@ -69,6 +69,45 @@
   .fixed.bottom-4.right-4 {
     z-index: 50 !important;
   }
+
+  /* ===== HISTORICAL TREND EXPLORER CONTAINMENT FIX ===== */
+  /* Force Historical Card to contain all children */
+  .historical-card {
+    position: relative !important;
+    overflow: visible !important; /* Allow content to be visible but contained */
+    contain: layout !important; /* CSS containment for better layout control */
+  }
+
+  /* Force metric buttons row to stay inside card flow */
+  .metric-row,
+  .flex.flex-wrap.gap-6,
+  .flex.gap-2 {
+    position: relative !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Fix any absolute positioned elements in Historical Trend Explorer */
+  .historical-card .absolute,
+  [class*="HistoricalTrendExplorer"] .absolute {
+    position: static !important;
+  }
+
+  /* Ensure control buttons stay contained */
+  .historical-card button,
+  [class*="HistoricalTrendExplorer"] button {
+    position: relative !important;
+    flex-shrink: 0;
+  }
+
+  /* Fix flex containers that might escape */
+  .historical-card > div,
+  [class*="HistoricalTrendExplorer"] > div {
+    position: relative !important;
+    width: 100% !important;
+  }
 }
 
 /* iPhone 15 specific fixes */
@@ -84,5 +123,18 @@
   
   .grid {
     gap: 1rem !important;
+  }
+
+  /* iPhone 15 specific - force metric buttons to wrap properly */
+  .metric-row,
+  .flex.gap-2 {
+    gap: 0.5rem !important;
+  }
+
+  /* Ensure buttons don't overflow on small screens */
+  .historical-card button,
+  [class*="HistoricalTrendExplorer"] button {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 0.75rem !important;
   }
 }
