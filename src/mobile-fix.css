@@ -1,0 +1,88 @@
+/* 
+ * MOBILE-ONLY FIX FOR IPHONE 15 CARD OVERLAPPING
+ * Safe fix that doesn't affect desktop layout
+ */
+
+/* MOBILE FIX ONLY - Prevent card overlapping */
+@media (max-width: 768px) {
+  /* Ensure all dashboard cards stack naturally */
+  .dashboard-card,
+  [class*="bg-slate-800"],
+  [class*="rounded-2xl"] {
+    position: relative !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Fix parent containers to expand properly */
+  .dashboard-section,
+  main > div {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* 24px - same as existing gap-6 */
+  }
+
+  /* Ensure grid containers work properly on mobile */
+  .grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Fix specific card heights that might cause overlap */
+  .card-glow,
+  [class*="h-[220px]"] {
+    height: auto !important;
+    min-height: 200px;
+    padding: 1.5rem;
+  }
+
+  /* Prevent absolute positioning issues */
+  .mobile-no-absolute {
+    position: relative !important;
+  }
+
+  /* Fix any fixed heights in forecast/control cards */
+  .retraining-card,
+  [class*="ForecastCard"],
+  [class*="ControlCard"] {
+    height: auto !important;
+    white-space: normal !important;
+    overflow: visible !important;
+  }
+
+  /* Ensure proper spacing between major sections */
+  main > .grid,
+  main > div {
+    margin-bottom: 2rem !important;
+  }
+
+  /* Fix weather panel and historical explorer */
+  [class*="WeatherPanel"],
+  [class*="HistoricalTrendExplorer"] {
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  /* Ensure chat button doesn't interfere */
+  .fixed.bottom-4.right-4 {
+    z-index: 50 !important;
+  }
+}
+
+/* iPhone 15 specific fixes */
+@media (max-width: 430px) and (-webkit-device-pixel-ratio: 3) {
+  /* Extra safety for iPhone 15 */
+  body {
+    overflow-x: hidden;
+  }
+  
+  main {
+    padding: 0.75rem !important;
+  }
+  
+  .grid {
+    gap: 1rem !important;
+  }
+}

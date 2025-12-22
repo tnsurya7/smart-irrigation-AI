@@ -107,7 +107,7 @@ export const SmartAgricultureDashboard: React.FC = () => {
         </div>
 
         {/* Sensor Cards Grid - Equal spacing and sizes */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+        <div className="dashboard-section grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
           <div className="animate-scale-in" style={{animationDelay: '0.1s'}}>
             <DataCard title="Temperature" value={safeData.temperature} unit="°C" />
           </div>
@@ -121,7 +121,7 @@ export const SmartAgricultureDashboard: React.FC = () => {
           </div>
 
           <div className="animate-scale-in" style={{animationDelay: '0.4s'}}>
-            <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border border-slate-700/50 h-[220px] card-glow">
+            <div className="dashboard-card bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border border-slate-700/50 h-[220px] card-glow">
               <div className="flex items-center gap-2 mb-4">
                 <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -139,7 +139,7 @@ export const SmartAgricultureDashboard: React.FC = () => {
           </div>
 
           <div className="animate-scale-in" style={{animationDelay: '0.5s'}}>
-            <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border border-slate-700/50 h-[220px] card-glow">
+            <div className="dashboard-card bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border border-slate-700/50 h-[220px] card-glow">
               <div className="mb-4">
                 <p className="text-sm text-slate-300 font-medium text-center">🌧️ Rain Sensor</p>
               </div>
@@ -156,7 +156,7 @@ export const SmartAgricultureDashboard: React.FC = () => {
         </div>
 
         {/* Charts and Controls Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
+        <div className="dashboard-section grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
           <div className="animate-scale-in" style={{animationDelay: '0.6s'}}>
             <HistoryChart data={safeHistory} />
           </div>
@@ -175,7 +175,7 @@ export const SmartAgricultureDashboard: React.FC = () => {
         </div>
 
         {/* Enhanced Analytics Grid */}
-        <div className="grid grid-cols-1 gap-8 mb-10">
+        <div className="dashboard-section grid grid-cols-1 gap-8 mb-10">
           {/* Weather Panel */}
           <div className="animate-slide-up" style={{animationDelay: '0.8s'}}>
             <WeatherPanel />
@@ -183,7 +183,7 @@ export const SmartAgricultureDashboard: React.FC = () => {
         </div>
 
         {/* Model Performance & System Status */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
+        <div className="dashboard-section grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
           <div className="animate-slide-up" style={{animationDelay: '1.0s'}}>
             <ForecastCard 
               modelReport={modelReport}
