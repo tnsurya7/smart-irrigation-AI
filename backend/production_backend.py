@@ -206,33 +206,35 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 @app.get("/health/detailed")
 async def detailed_health_check():
     """Detailed health check endpoint with database and API status"""
+    health_data = {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "1.0.0",
+        "websocket_connections": len(manager.active_connections)
+    }
+    
+    # Test database connection (non-blocking)
     try:
-        # Test database connection
         result = supabase.table('sensor_data').select('id').limit(1).execute()
-        db_status = "healthy" if result.data is not None else "unhealthy"
-        
-        # Test external APIs
-        weather_status = "healthy"
-        try:
-            weather_response = requests.get(
-                f"http://api.openweathermap.org/data/2.5/weather?q=Erode,IN&appid={OPENWEATHER_API_KEY}",
-                timeout=5
-            )
-            if weather_response.status_code != 200:
-                weather_status = "unhealthy"
-        except:
-            weather_status = "unhealthy"
-        
-        return {
-            "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
-            "database": db_status,
-            "weather_api": weather_status,
-            "version": "1.0.0"
-        }
+        health_data["database"] = "healthy" if result.data is not None else "unhealthy"
     except Exception as e:
-        logger.error(f"Detailed health check failed: {e}")
-        raise HTTPException(status_code=503, detail="Service unhealthy")
+        logger.warning(f"Database health check failed: {e}")
+        health_data["database"] = "unhealthy"
+        health_data["database_error"] = str(e)
+    
+    # Test external APIs (non-blocking)
+    try:
+        weather_response = requests.get(
+            f"http://api.openweathermap.org/data/2.5/weather?q=Erode,IN&appid={OPENWEATHER_API_KEY}",
+            timeout=3
+        )
+        health_data["weather_api"] = "healthy" if weather_response.status_code == 200 else "unhealthy"
+    except Exception as e:
+        logger.warning(f"Weather API health check failed: {e}")
+        health_data["weather_api"] = "unhealthy"
+    
+    # Always return 200 OK - don't fail the service for external dependencies
+    return health_data
 
 # Sensor data endpoints
 @app.post("/sensor-data")
