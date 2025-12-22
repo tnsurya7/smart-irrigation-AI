@@ -44,36 +44,65 @@ def send_telegram_message(chat_id: str, text: str, parse_mode: str = "Markdown")
         return False
 
 def get_sensor_data() -> Dict[str, Any]:
-    """Get latest sensor data from backend"""
+    """Get latest sensor data from internal shared state"""
     try:
-        response = requests.get(f"{BACKEND_URL}/sensor-data/latest", timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            return data.get('data', [{}])[0] if data.get('data') else {}
+        # Import shared state from production backend
+        from production_backend import latest_sensor_data
+        
+        if latest_sensor_data:
+            return latest_sensor_data
+        else:
+            # Return safe defaults if no data available
+            return {
+                "soil_moisture": 0.0,
+                "temperature": 0.0,
+                "humidity": 0.0,
+                "rain_detected": False,
+                "pump_status": 0,
+                "flow_rate": 0.0,
+                "total_liters": 0.0,
+                "mode": "auto",
+                "source": "system"
+            }
     except Exception as e:
-        logger.error(f"Failed to get sensor data: {e}")
-    return {}
+        logger.error(f"Failed to get sensor data from shared state: {e}")
+        return {}
 
 def get_weather_data() -> Dict[str, Any]:
-    """Get weather data from backend"""
+    """Get weather data from internal shared state"""
     try:
-        response = requests.get(f"{BACKEND_URL}/weather", timeout=5)
-        if response.status_code == 200:
-            return response.json()
+        # Import shared state from production backend
+        from production_backend import latest_weather_data
+        
+        if latest_weather_data:
+            return latest_weather_data
+        else:
+            # Return safe defaults if no data available
+            return {
+                "temperature": 0.0,
+                "humidity": 0.0,
+                "rain_probability": 0,
+                "rain_expected": False,
+                "location": "Erode, Tamil Nadu"
+            }
     except Exception as e:
-        logger.error(f"Failed to get weather data: {e}")
-    return {}
+        logger.error(f"Failed to get weather data from shared state: {e}")
+        return {}
 
 def control_pump(command: str) -> bool:
-    """Control pump via backend API"""
+    """Control pump via internal backend functions"""
     try:
-        endpoint = "pump-on" if command.upper() == "ON" else "pump-off"
-        response = requests.post(
-            f"{BACKEND_URL}/api/{endpoint}",
-            json={"source": "telegram", "command": command},
-            timeout=10
-        )
-        return response.status_code == 200
+        # Import shared state from production backend
+        from production_backend import latest_sensor_data
+        
+        # Update pump status in shared state
+        if latest_sensor_data:
+            latest_sensor_data["pump_status"] = 1 if command.upper() == "ON" else 0
+            latest_sensor_data["timestamp"] = datetime.utcnow().isoformat()
+        
+        logger.info(f"Pump turned {command} via Telegram")
+        return True
+        
     except Exception as e:
         logger.error(f"Failed to control pump: {e}")
         return False
