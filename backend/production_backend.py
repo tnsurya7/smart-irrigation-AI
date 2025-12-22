@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status, Response
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -24,6 +24,8 @@ import numpy as np
 import joblib
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 import requests
+import json
+from typing import Dict, Set, Any, Optional
 
 # Configure logging
 logging.basicConfig(
@@ -88,7 +90,7 @@ def health():
 # Security middleware
 security = HTTPBearer()
 
-# CORS middleware - FIXED for Vercel frontend
+# CORS middleware - FIXED for Vercel frontend and WebSocket
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -97,7 +99,7 @@ app.add_middleware(
         "https://smart-agriculture-backend-my7c.onrender.com"  # Health checks
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -148,6 +150,45 @@ class SystemStatusModel(BaseModel):
     status: str = Field(..., pattern=r"^(online|offline|error|warning)$")
     message: Optional[str] = None
     response_time_ms: Optional[int] = Field(None, ge=0)
+
+# Global variables for WebSocket connections
+websocket_connections: Set[WebSocket] = set()
+latest_sensor_data: Optional[Dict[str, Any]] = None
+
+# WebSocket connection manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Set[WebSocket] = set()
+        self.latest_data: Optional[Dict[str, Any]] = None
+    
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.add(websocket)
+        logger.info(f"WebSocket connected. Total connections: {len(self.active_connections)}")
+    
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.discard(websocket)
+        logger.info(f"WebSocket disconnected. Total connections: {len(self.active_connections)}")
+    
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        try:
+            await websocket.send_text(message)
+        except:
+            self.disconnect(websocket)
+    
+    async def broadcast(self, message: str):
+        disconnected = []
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except:
+                disconnected.append(connection)
+        
+        # Remove disconnected clients
+        for connection in disconnected:
+            self.disconnect(connection)
+
+manager = ConnectionManager()
 
 # Authentication dependency
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -439,6 +480,90 @@ async def get_system_status():
     except Exception as e:
         logger.error(f"Error fetching system status: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch system status")
+
+# WebSocket endpoint with origin validation
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for real-time dashboard updates"""
+    
+    # Get origin from headers
+    origin = websocket.headers.get("origin")
+    
+    # Allowed origins for WebSocket connections
+    allowed_origins = [
+        "https://smart-agriculture-dashboard-2025.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ]
+    
+    # Validate origin
+    if origin and origin not in allowed_origins:
+        logger.warning(f"WebSocket connection rejected - invalid origin: {origin}")
+        await websocket.close(code=1008, reason="Invalid origin")
+        return
+    
+    # Accept connection
+    await manager.connect(websocket)
+    
+    try:
+        while True:
+            # Receive data from client
+            data = await websocket.receive_text()
+            
+            try:
+                message = json.loads(data)
+                message_type = message.get("type", "unknown")
+                
+                if message_type == "ping":
+                    # Respond to ping with pong
+                    await manager.send_personal_message(
+                        json.dumps({"type": "pong", "timestamp": datetime.utcnow().isoformat()}),
+                        websocket
+                    )
+                
+                elif message_type == "register":
+                    # Client registration
+                    client_role = message.get("role", "unknown")
+                    logger.info(f"WebSocket client registered: {client_role}")
+                    
+                    # Send welcome message
+                    welcome = {
+                        "type": "welcome",
+                        "message": "Connected to Smart Agriculture WebSocket",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                    await manager.send_personal_message(json.dumps(welcome), websocket)
+                
+                elif message_type == "sensor_data":
+                    # Handle sensor data from ESP32
+                    logger.info(f"Received sensor data: {message}")
+                    
+                    # Store latest data
+                    manager.latest_data = message
+                    
+                    # Broadcast to all connected clients
+                    await manager.broadcast(json.dumps({
+                        "type": "sensor_update",
+                        "data": message,
+                        "timestamp": datetime.utcnow().isoformat()
+                    }))
+                
+                else:
+                    logger.warning(f"Unknown WebSocket message type: {message_type}")
+                    
+            except json.JSONDecodeError:
+                logger.error(f"Invalid JSON received: {data}")
+                await manager.send_personal_message(
+                    json.dumps({"type": "error", "message": "Invalid JSON format"}),
+                    websocket
+                )
+                
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        logger.info("WebSocket client disconnected")
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        manager.disconnect(websocket)
 
 # Irrigation events endpoints
 @app.get("/irrigation-events")
