@@ -46,7 +46,7 @@ def send_telegram_message(chat_id: str, text: str, parse_mode: str = "Markdown")
 def get_sensor_data() -> Dict[str, Any]:
     """Get latest sensor data from backend"""
     try:
-        response = requests.get(f"{BACKEND_URL}/api/sensor-data/latest", timeout=5)
+        response = requests.get(f"{BACKEND_URL}/sensor-data/latest", timeout=5)
         if response.status_code == 200:
             data = response.json()
             return data.get('data', [{}])[0] if data.get('data') else {}
@@ -57,7 +57,7 @@ def get_sensor_data() -> Dict[str, Any]:
 def get_weather_data() -> Dict[str, Any]:
     """Get weather data from backend"""
     try:
-        response = requests.get(f"{BACKEND_URL}/api/weather", timeout=5)
+        response = requests.get(f"{BACKEND_URL}/weather", timeout=5)
         if response.status_code == 200:
             return response.json()
     except Exception as e:
