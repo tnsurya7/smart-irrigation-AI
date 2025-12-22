@@ -61,18 +61,16 @@ app = FastAPI(
     redoc_url="/redoc" if os.getenv('NODE_ENV') != 'production' else None,
 )
 
-# CRITICAL: Health endpoints BEFORE any middleware to bypass ALL validation
-@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
+# CRITICAL: Health endpoints BEFORE any middleware - using direct Response
+@app.get("/", include_in_schema=False)
+@app.head("/", include_in_schema=False)
 def root():
-    """Root endpoint - bypasses all middleware and validation"""
-    return Response(content='{"status":"ok","service":"Smart Agriculture API"}', 
-                   media_type="application/json", status_code=200)
+    return Response(content='{"status":"ok"}', media_type="application/json", status_code=200)
 
-@app.api_route("/health", methods=["GET", "HEAD"], include_in_schema=False)
+@app.get("/health", include_in_schema=False)
+@app.head("/health", include_in_schema=False)
 def health():
-    """Health check endpoint - bypasses all middleware and validation"""
-    return Response(content='{"status":"ok"}', 
-                   media_type="application/json", status_code=200)
+    return Response(content='{"status":"ok"}', media_type="application/json", status_code=200)
 
 # Security middleware
 security = HTTPBearer()
