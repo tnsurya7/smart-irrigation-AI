@@ -24,13 +24,13 @@ from collections import defaultdict
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Configuration
-TELEGRAM_BOT_TOKEN = "***REMOVED***"
-CHAT_ID = "***REMOVED***"  # tn_surya_777
-OPENWEATHER_API_KEY = "***REMOVED***"
-WEBSOCKET_URL = "ws://localhost:8080/ws"
-BACKEND_URL = "http://localhost:8000"
-CITY = "Erode"
+# Configuration - Use environment variables for security
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', "***REMOVED***")
+CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', "***REMOVED***")  # tn_surya_777
+OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY', "***REMOVED***")
+WEBSOCKET_URL = os.getenv('WEBSOCKET_URL', "ws://localhost:8080/ws")
+BACKEND_URL = os.getenv('BACKEND_URL', "http://localhost:8000")
+CITY = os.getenv('WEATHER_CITY', "Erode")
 
 # Global variables for tracking
 pump_operations = []
