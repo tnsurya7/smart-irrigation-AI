@@ -88,32 +88,18 @@ def health():
 # Security middleware
 security = HTTPBearer()
 
-# CORS middleware with restricted origins
-if ALLOWED_ORIGINS and ALLOWED_ORIGINS[0]:
-    # Add Render internal origins for health checks and common Vercel patterns
-    health_check_origins = ALLOWED_ORIGINS + [
-        "https://smart-agriculture-backend-my7c.onrender.com",
+# CORS middleware - FIXED for Vercel frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
         "https://smart-agriculture-dashboard-2025.vercel.app",
-        "https://smart-agri-dashboard-prod.vercel.app",
-        "https://arimax-smart-farm-2025.vercel.app",
-        "https://smart-irrigation-dashboard.vercel.app"
-    ]
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=health_check_origins,
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "HEAD"],
-        allow_headers=["*"],
-    )
-else:
-    logger.warning("ALLOWED_ORIGINS not set - allowing all origins (development only)")
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+        "http://localhost:5173",  # Development
+        "https://smart-agriculture-backend-my7c.onrender.com"  # Health checks
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Trusted host middleware
 app.add_middleware(
