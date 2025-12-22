@@ -23,19 +23,21 @@
 - **Install Command**: `npm install`
 
 ### **Step 3: Environment Variables**
-Add these environment variables in Vercel:
+Add these environment variables in Vercel (replace with your actual values):
 
 ```
 VITE_API_BASE_URL=https://smart-agriculture-backend-my7c.onrender.com/api
 VITE_WS_URL=wss://smart-agriculture-backend-my7c.onrender.com/ws
 VITE_SUPABASE_URL=https://zkqhyojleofjngbfeses.supabase.co
-VITE_SUPABASE_ANON_KEY=***REMOVED***
-VITE_OPENWEATHER_API_KEY=***REMOVED***
-VITE_N8N_WEBHOOK_URL=https://suryan8nproject.app.n8n.cloud/webhook/ccd37962-6bb3-4c30-b859-d3b63b9c64e2/chat
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key-here
+VITE_OPENWEATHER_API_KEY=your-openweather-api-key-here
+VITE_N8N_WEBHOOK_URL=your-n8n-webhook-url-here
 VITE_ADMIN_EMAIL=admin@smartfarm.com
-VITE_ADMIN_PASSWORD=admin123
+VITE_ADMIN_PASSWORD=your-admin-password-here
 NODE_ENV=production
 ```
+
+**⚠️ SECURITY NOTE:** Never commit actual API keys to git. Add these values manually in Vercel dashboard.
 
 ### **Step 4: Deploy**
 1. Click **"Deploy"**
