@@ -90,8 +90,12 @@ security = HTTPBearer()
 
 # CORS middleware with restricted origins
 if ALLOWED_ORIGINS and ALLOWED_ORIGINS[0]:
-    # Add Render internal origins for health checks
-    health_check_origins = ALLOWED_ORIGINS + ["https://smart-agriculture-backend-my7c.onrender.com"]
+    # Add Render internal origins for health checks and common Vercel patterns
+    health_check_origins = ALLOWED_ORIGINS + [
+        "https://smart-agriculture-backend-my7c.onrender.com",
+        "https://smart-agri-arimax-ai-7077.vercel.app",
+        "https://smart-agriculture-dashboard.vercel.app"
+    ]
     app.add_middleware(
         CORSMiddleware,
         allow_origins=health_check_origins,
