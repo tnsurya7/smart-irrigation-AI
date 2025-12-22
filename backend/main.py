@@ -21,7 +21,15 @@ def health():
 # 🔹 Import your real app AFTER health app
 from production_backend import app as main_app
 
-# 🔹 Mount real app under /api
+# 🔹 Import and include telegram router directly
+try:
+    from telegram_bot import router as telegram_router
+    health_app.include_router(telegram_router)
+    print("✅ Telegram router included in health app")
+except ImportError as e:
+    print(f"⚠️ Failed to import telegram router: {e}")
+
+# 🔹 Mount real app under /api for API endpoints
 health_app.mount("/api", main_app)
 
 if __name__ == "__main__":

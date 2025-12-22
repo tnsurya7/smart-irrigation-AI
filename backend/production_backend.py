@@ -28,7 +28,17 @@ import json
 from typing import Dict, Set, Any, Optional
 
 # Import Telegram bot router
-from telegram_bot import router as telegram_router
+telegram_router = None
+try:
+    from .telegram_bot import router as telegram_router
+    logger.info("Successfully imported telegram_bot router")
+except ImportError:
+    try:
+        from telegram_bot import router as telegram_router
+        logger.info("Successfully imported telegram_bot router (fallback)")
+    except ImportError:
+        logger.error("Failed to import telegram_bot router - Telegram functionality disabled")
+        telegram_router = None
 
 # Configure logging
 logging.basicConfig(
@@ -68,8 +78,12 @@ app = FastAPI(
     redoc_url="/redoc" if os.getenv('NODE_ENV') != 'production' else None,
 )
 
-# Include Telegram bot router
-app.include_router(telegram_router)
+# Include Telegram bot router if available
+if telegram_router:
+    app.include_router(telegram_router)
+    logger.info("Telegram bot router registered successfully")
+else:
+    logger.warning("Telegram bot router not available - skipping registration")
 
 # CRITICAL: Render health check bypass at ASGI level - MUST BE FIRST MIDDLEWARE
 @app.middleware("http")
