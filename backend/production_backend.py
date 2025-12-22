@@ -27,6 +27,9 @@ import requests
 import json
 from typing import Dict, Set, Any, Optional
 
+# Import Telegram bot router
+from telegram_bot import router as telegram_router
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -64,6 +67,9 @@ app = FastAPI(
     docs_url="/docs" if os.getenv('NODE_ENV') != 'production' else None,
     redoc_url="/redoc" if os.getenv('NODE_ENV') != 'production' else None,
 )
+
+# Include Telegram bot router
+app.include_router(telegram_router)
 
 # CRITICAL: Render health check bypass at ASGI level - MUST BE FIRST MIDDLEWARE
 @app.middleware("http")
@@ -566,6 +572,49 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
         manager.disconnect(websocket)
+
+# Pump control endpoints for Telegram bot
+@app.post("/api/pump-on")
+async def pump_on():
+    """Turn pump ON via API"""
+    try:
+        # In production, this would send command to ESP32 via WebSocket
+        # For now, we'll simulate the response
+        logger.info("Pump turned ON via API")
+        
+        # Broadcast to WebSocket clients
+        await manager.broadcast(json.dumps({
+            "type": "pump_command",
+            "command": "ON",
+            "timestamp": datetime.utcnow().isoformat(),
+            "source": "telegram"
+        }))
+        
+        return {"status": "success", "message": "Pump turned ON", "timestamp": datetime.utcnow().isoformat()}
+    except Exception as e:
+        logger.error(f"Error turning pump ON: {e}")
+        raise HTTPException(status_code=500, detail="Failed to turn pump ON")
+
+@app.post("/api/pump-off")
+async def pump_off():
+    """Turn pump OFF via API"""
+    try:
+        # In production, this would send command to ESP32 via WebSocket
+        # For now, we'll simulate the response
+        logger.info("Pump turned OFF via API")
+        
+        # Broadcast to WebSocket clients
+        await manager.broadcast(json.dumps({
+            "type": "pump_command",
+            "command": "OFF",
+            "timestamp": datetime.utcnow().isoformat(),
+            "source": "telegram"
+        }))
+        
+        return {"status": "success", "message": "Pump turned OFF", "timestamp": datetime.utcnow().isoformat()}
+    except Exception as e:
+        logger.error(f"Error turning pump OFF: {e}")
+        raise HTTPException(status_code=500, detail="Failed to turn pump OFF")
 
 # Irrigation events endpoints
 @app.get("/irrigation-events")
