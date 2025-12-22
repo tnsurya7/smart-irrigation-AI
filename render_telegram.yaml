@@ -1,0 +1,21 @@
+# Render.com deployment configuration for Telegram Bot
+services:
+  - type: web
+    name: smart-agriculture-telegram-bot
+    env: python
+    plan: free
+    buildCommand: pip install -r telegram_requirements.txt
+    startCommand: python telegram_production.py
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        value: ***REMOVED***
+      - key: TELEGRAM_CHAT_ID
+        value: ***REMOVED***
+      - key: OPENWEATHER_API_KEY
+        value: ***REMOVED***
+      - key: BACKEND_URL
+        value: https://smart-agriculture-backend-my7c.onrender.com
+      - key: WEATHER_CITY
+        value: Erode
+      - key: NODE_ENV
+        value: production
