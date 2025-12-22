@@ -112,7 +112,10 @@ else:
 # Trusted host middleware
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"] if os.getenv('NODE_ENV') != 'production' else ["smart-agriculture-backend.render.com"]
+    allowed_hosts=["*"] if os.getenv('NODE_ENV') != 'production' else [
+        "smart-agriculture-backend-my7c.onrender.com",
+        "smart-agriculture-backend.render.com"  # backup
+    ]
 )
 
 # Pydantic models
