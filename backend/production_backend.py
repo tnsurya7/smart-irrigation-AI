@@ -173,6 +173,9 @@ latest_sensor_data: Optional[Dict[str, Any]] = {
     "temperature": 0.0,
     "humidity": 0.0,
     "rain_detected": False,
+    "light_raw": 0,
+    "light_percent": 0.0,
+    "light_state": "dark",
     "pump_status": 0,
     "flow_rate": 0.0,
     "total_liters": 0.0,
@@ -284,6 +287,9 @@ async def create_sensor_data(data: SensorDataModel, user: dict = Depends(get_cur
             "temperature": data.temperature,
             "humidity": data.humidity,
             "rain_detected": data.rain_detected,
+            "light_raw": data.light_raw,
+            "light_percent": data.light_percent,
+            "light_state": data.light_state,
             "pump_status": data.pump_status,
             "flow_rate": data.flow_rate,
             "total_liters": data.total_liters,
@@ -722,6 +728,9 @@ async def startup_event():
         "temperature": 28.5,
         "humidity": 72.0,
         "rain_detected": False,
+        "light_raw": 2800,
+        "light_percent": 68.0,
+        "light_state": "normal",
         "pump_status": 0,
         "flow_rate": 0.0,
         "total_liters": 125.5,
@@ -746,18 +755,29 @@ async def startup_event():
             "last_updated": datetime.utcnow().isoformat()
         }
     
+    # Start Telegram alert system
+    try:
+        from telegram_alerts import start_telegram_alerts
+        alert_scheduler = start_telegram_alerts()
+        if alert_scheduler:
+            logger.info("✅ Telegram alert system started successfully")
+        else:
+            logger.warning("⚠️ Telegram alert system not started (missing config)")
+    except Exception as e:
+        logger.error(f"Failed to start Telegram alert system: {e}")
+    
     # Update system status
     try:
         supabase.table('system_status').insert({
             "timestamp": datetime.utcnow().isoformat(),
             "component": "backend",
             "status": "online",
-            "message": "Backend API started successfully with Telegram integration"
+            "message": "Backend API started successfully with Telegram integration and alerts"
         }).execute()
     except Exception as e:
         logger.error(f"Failed to update startup status: {e}")
     
-    logger.info("✅ Smart Agriculture API ready - Telegram bot can now access real-time data")
+    logger.info("✅ Smart Agriculture API ready - Full production system with alerts active")
 
 # Shutdown event
 @app.on_event("shutdown")
