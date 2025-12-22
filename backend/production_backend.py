@@ -27,18 +27,21 @@ import requests
 import json
 from typing import Dict, Set, Any, Optional
 
-# Import Telegram bot router
+# Configure logging FIRST
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Import Telegram bot router (after logger is defined)
 telegram_router = None
 try:
-    from .telegram_bot import router as telegram_router
+    from telegram_bot import router as telegram_router
     logger.info("Successfully imported telegram_bot router")
-except ImportError:
-    try:
-        from telegram_bot import router as telegram_router
-        logger.info("Successfully imported telegram_bot router (fallback)")
-    except ImportError:
-        logger.error("Failed to import telegram_bot router - Telegram functionality disabled")
-        telegram_router = None
+except ImportError as e:
+    logger.error(f"Failed to import telegram_bot router: {e}")
+    telegram_router = None
 
 # Configure logging
 logging.basicConfig(
