@@ -37,8 +37,6 @@ OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',')
-HOST = os.getenv('HOST', '0.0.0.0')
-PORT = int(os.getenv('PORT', 8000))
 
 # Validate required environment variables
 required_vars = {
@@ -143,6 +141,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     return {"user": "authenticated"}
 
 # Health check endpoint
+@app.get("/")
+def root():
+    """Root endpoint"""
+    return {"message": "Smart Agriculture API", "status": "running", "version": "1.0.0"}
+
 @app.get("/health")
 def health_check():
     """Simple health check endpoint for Render monitoring"""
@@ -490,6 +493,7 @@ async def shutdown_event():
 if __name__ == "__main__":
     # Use Render's dynamic PORT environment variable
     port = int(os.getenv('PORT', 8000))
+    logger.info(f"Starting server on port {port} (from PORT env var: {os.getenv('PORT')})")
     uvicorn.run(
         "production_backend:app",
         host="0.0.0.0",
