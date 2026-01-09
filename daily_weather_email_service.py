@@ -18,6 +18,14 @@ import json
 import threading
 from pathlib import Path
 
+# Load environment variables from .env file for local development
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # dotenv not available, use environment variables directly
+    pass
+
 class DailyWeatherEmailService:
     def __init__(self):
         # Load environment variables

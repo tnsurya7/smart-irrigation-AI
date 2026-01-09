@@ -12,6 +12,47 @@
 
 **Location:** Erode, Tamil Nadu, India
 
+## 🔧 Local Development Setup
+
+### 1. Environment Variables
+
+**For Local Development:**
+Create a `.env` file in the project root with your actual credentials:
+
+```env
+# OpenWeather API Key
+OPENWEATHER_API_KEY=your-actual-api-key
+
+# Email Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+
+# Email Recipients (comma-separated)
+EMAIL_RECIPIENTS=recipient1@example.com,recipient2@example.com
+
+# Weather City
+WEATHER_CITY=Erode,Tamil Nadu,IN
+```
+
+**For Production (Render):**
+Add the same variables in Render Dashboard → Environment tab
+
+### 2. Test Local Configuration
+
+```bash
+# Test if environment variables are loaded correctly
+python test_local_env.py
+```
+
+## 🔒 Security
+
+- ✅ `.env` file is excluded from Git via `.gitignore`
+- ✅ No hardcoded credentials in source code
+- ✅ Environment variables used for all sensitive data
+- ✅ Production uses Render environment variables
+
 ## 🌟 Features
 
 - **Twice Daily Emails**: Morning (6:00 AM) and Evening (7:00 PM) IST

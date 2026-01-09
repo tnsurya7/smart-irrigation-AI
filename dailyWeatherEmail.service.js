@@ -7,7 +7,13 @@
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
-require('dotenv').config();
+
+// Load environment variables from .env file for local development
+try {
+    require('dotenv').config();
+} catch (error) {
+    // dotenv not available, use environment variables directly
+}
 
 class DailyWeatherEmailService {
     constructor() {
