@@ -21,15 +21,21 @@ from pathlib import Path
 class DailyWeatherEmailService:
     def __init__(self):
         # Load environment variables
-        self.api_key = os.getenv("OPENWEATHER_API_KEY", "59ade005948b4c8f58a100afc603f047")
+        self.api_key = os.getenv("OPENWEATHER_API_KEY")
         self.city = "Erode,Tamil Nadu,IN"
         
         # Email configuration
         self.smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
         self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        self.email_user = os.getenv("EMAIL_USER", "suryakumar56394@gmail.com")
-        self.email_pass = os.getenv("EMAIL_PASS", "iyaweppkgwibgqry")  # Remove spaces from app password
-        self.recipients = os.getenv("EMAIL_RECIPIENTS", "suryakumar56394@gmail.com,monikam11g1@gmail.com").split(",")
+        self.email_user = os.getenv("EMAIL_USER")
+        self.email_pass = os.getenv("EMAIL_PASS")
+        self.recipients = os.getenv("EMAIL_RECIPIENTS", "").split(",") if os.getenv("EMAIL_RECIPIENTS") else []
+        
+        # Validate required environment variables
+        if not all([self.api_key, self.email_user, self.email_pass, self.recipients]):
+            print("❌ Daily Weather Email Service: Missing required environment variables")
+            print("Required: OPENWEATHER_API_KEY, EMAIL_USER, EMAIL_PASS, EMAIL_RECIPIENTS")
+            return
         
         print("📧 Daily Weather Email Service (Python): Initialized")
 
@@ -488,7 +494,7 @@ class DailyWeatherEmailService:
             self.schedule_daily_email()
             self.run_scheduler()
             print("✅ Daily Weather Email Service (Python): Initialized successfully")
-            print("📧 Recipients: suryakumar56394@gmail.com, monikam11g1@gmail.com")
+            print("📧 Email service configured via environment variables")
             print("⏰ Schedule: 6:00 AM and 7:00 PM IST daily")
             
             # Uncomment to send a test email on startup

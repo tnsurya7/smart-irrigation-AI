@@ -3,8 +3,8 @@
 ## 📧 Current Configuration
 
 **Recipients:**
-- suryakumar56394@gmail.com
-- monikam11g1@gmail.com
+- Configured via environment variables
+- Multiple recipients supported
 
 **Schedule:**
 - **Morning Report**: 6:00 AM IST daily
@@ -66,8 +66,8 @@ EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-app-password
 EMAIL_RECIPIENTS=farmer1@example.com,farmer2@example.com
 
-# Weather API (reuses existing key)
-OPENWEATHER_API_KEY=59ade005948b4c8f58a100afc603f047
+# Weather API
+OPENWEATHER_API_KEY=your-openweather-api-key
 ```
 
 ### 3. Integration Options

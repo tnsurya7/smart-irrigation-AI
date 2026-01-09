@@ -20,17 +20,22 @@ logger = logging.getLogger(__name__)
 def start_weather_email_service():
     """Start the weather email service in a background thread"""
     try:
-        # Set environment variables (fallback to hardcoded for compatibility)
-        os.environ.setdefault('EMAIL_USER', 'suryakumar56394@gmail.com')
-        os.environ.setdefault('EMAIL_PASS', 'iyaweppkgwibgqry')
-        os.environ.setdefault('EMAIL_RECIPIENTS', 'suryakumar56394@gmail.com,monikam11g1@gmail.com')
-        os.environ.setdefault('OPENWEATHER_API_KEY', '59ade005948b4c8f58a100afc603f047')
+        # Use environment variables only - no hardcoded credentials
+        email_user = os.getenv('EMAIL_USER')
+        email_pass = os.getenv('EMAIL_PASS')
+        email_recipients = os.getenv('EMAIL_RECIPIENTS')
+        api_key = os.getenv('OPENWEATHER_API_KEY')
+        
+        if not all([email_user, email_pass, email_recipients, api_key]):
+            logger.warning("⚠️ Weather email service: Missing required environment variables")
+            logger.info("Required: EMAIL_USER, EMAIL_PASS, EMAIL_RECIPIENTS, OPENWEATHER_API_KEY")
+            return
         
         # Import and initialize the service
         from daily_weather_email_service import initialize_daily_weather_email
         
         logger.info("🌱 Auto-starting Daily Weather Email Service...")
-        logger.info("📧 Recipients: suryakumar56394@gmail.com, monikam11g1@gmail.com")
+        logger.info("📧 Email service configured via environment variables")
         logger.info("⏰ Schedule: 6:00 AM and 7:00 PM IST daily")
         
         service = initialize_daily_weather_email()

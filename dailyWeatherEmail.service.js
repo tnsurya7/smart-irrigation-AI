@@ -11,20 +11,27 @@ require('dotenv').config();
 
 class DailyWeatherEmailService {
     constructor() {
-        this.apiKey = process.env.OPENWEATHER_API_KEY || "59ade005948b4c8f58a100afc603f047";
+        this.apiKey = process.env.OPENWEATHER_API_KEY;
         this.city = "Erode,Tamil Nadu,IN";
         this.emailConfig = {
             host: process.env.SMTP_HOST || 'smtp.gmail.com',
             port: process.env.SMTP_PORT || 587,
             secure: false,
             auth: {
-                user: process.env.EMAIL_USER || 'suryakumar56394@gmail.com',
-                pass: process.env.EMAIL_PASS || 'iyaweppkgwibgqry'  // Remove spaces from app password
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
             }
         };
         this.recipients = process.env.EMAIL_RECIPIENTS ? 
             process.env.EMAIL_RECIPIENTS.split(',') : 
-            ['suryakumar56394@gmail.com', 'monikam11g1@gmail.com'];
+            [];
+        
+        // Validate required environment variables
+        if (!this.apiKey || !this.emailConfig.auth.user || !this.emailConfig.auth.pass || this.recipients.length === 0) {
+            console.error('❌ Daily Weather Email Service: Missing required environment variables');
+            console.error('Required: OPENWEATHER_API_KEY, EMAIL_USER, EMAIL_PASS, EMAIL_RECIPIENTS');
+            return;
+        }
         
         this.transporter = null;
         this.initializeEmailTransporter();
@@ -489,7 +496,7 @@ class DailyWeatherEmailService {
             console.log('🚀 Daily Weather Email Service: Initializing...');
             this.startDailyCronJob();
             console.log('✅ Daily Weather Email Service: Initialized successfully');
-            console.log('📧 Recipients: suryakumar56394@gmail.com, monikam11g1@gmail.com');
+            console.log('📧 Email service configured via environment variables');
             console.log('⏰ Schedule: 6:00 AM and 7:00 PM IST daily');
             
             // Send a test email on startup (optional - remove in production)

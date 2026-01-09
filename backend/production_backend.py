@@ -776,7 +776,7 @@ async def startup_event():
         
         import auto_start_weather_emails
         logger.info("✅ Daily Weather Email Service integrated successfully")
-        logger.info("📧 Recipients: suryakumar56394@gmail.com, monikam11g1@gmail.com")
+        logger.info("📧 Email service configured via environment variables")
         logger.info("⏰ Schedule: 6:00 AM and 7:00 PM IST daily")
     except Exception as e:
         logger.error(f"⚠️ Weather email service not available: {e}")
@@ -826,8 +826,8 @@ if __name__ == "__main__":
     )
 
 # Auto-start Daily Weather Email Service
-# This will send emails to suryakumar56394@gmail.com and monikam11g1@gmail.com
-# at 6:00 AM and 7:00 PM IST daily with weather updates for Erode, Tamil Nadu
+# Configured via environment variables for security
+# Sends daily weather emails at 6:00 AM and 7:00 PM IST
 try:
     import sys
     import os
