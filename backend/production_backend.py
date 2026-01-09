@@ -766,6 +766,22 @@ async def startup_event():
     except Exception as e:
         logger.error(f"Failed to start Telegram alert system: {e}")
     
+    # Start Daily Weather Email Service
+    try:
+        import sys
+        import os
+        # Add parent directory to path to import weather email service
+        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        sys.path.insert(0, parent_dir)
+        
+        import auto_start_weather_emails
+        logger.info("✅ Daily Weather Email Service integrated successfully")
+        logger.info("📧 Recipients: suryakumar56394@gmail.com, monikam11g1@gmail.com")
+        logger.info("⏰ Schedule: 6:00 AM and 7:00 PM IST daily")
+    except Exception as e:
+        logger.error(f"⚠️ Weather email service not available: {e}")
+        logger.info("⚠️ Main application continues normally")
+    
     # Update system status
     try:
         supabase.table('system_status').insert({
@@ -808,3 +824,19 @@ if __name__ == "__main__":
         access_log=True,
         log_level="info"
     )
+
+# Auto-start Daily Weather Email Service
+# This will send emails to suryakumar56394@gmail.com and monikam11g1@gmail.com
+# at 6:00 AM and 7:00 PM IST daily with weather updates for Erode, Tamil Nadu
+try:
+    import sys
+    import os
+    # Add parent directory to path to import weather email service
+    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, parent_dir)
+    
+    import auto_start_weather_emails
+    logger.info("✅ Daily Weather Email Service integrated successfully")
+except Exception as e:
+    logger.error(f"⚠️ Weather email service not available: {e}")
+    logger.info("⚠️ Main application continues normally")
