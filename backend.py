@@ -386,8 +386,8 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 # Auto-start Daily Weather Email Service
-# This will send emails to ***REMOVED*** and ***REMOVED***
-# at 6:00 AM and 7:00 PM IST daily with weather updates for Erode, Tamil Nadu
+# Configured via environment variables for security
+# Sends daily weather emails at 6:00 AM and 7:00 PM IST
 try:
     import auto_start_weather_emails
     print("✅ Daily Weather Email Service integrated successfully")
