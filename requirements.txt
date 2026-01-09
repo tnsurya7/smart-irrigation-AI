@@ -9,3 +9,5 @@ python-dotenv
 requests
 websockets
 supabase
+
+schedule==1.2.2
