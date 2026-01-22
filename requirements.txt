@@ -8,7 +8,6 @@ statsmodels==0.14.1
 python-dotenv
 requests
 websockets
-supabase
 aiohttp==3.9.5
-
 schedule==1.2.2
+supabase
