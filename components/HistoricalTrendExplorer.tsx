@@ -52,7 +52,7 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
               .slice(0, 100) // Hard limit to 100 points
               .map(line => {
                 const values = line.split(',');
-                return {
+                const parsed = {
                   timestamp: values[0] || new Date().toISOString(),
                   soil_moisture: parseFloat(values[1]) || 0,
                   temperature: parseFloat(values[2]) || 0,
@@ -62,12 +62,37 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
                   flow: parseFloat(values[6]) || 0,
                   pump_status: parseFloat(values[7]) === 1 // Pump status from column 7
                 };
+                
+                // Debug first few rows
+                if (dataLines.indexOf(line) < 3) {
+                  console.log('🔍 Parsing CSV row:', {
+                    raw: values.slice(0, 4),
+                    parsed: {
+                      soil: parsed.soil_moisture,
+                      temp: parsed.temperature,
+                      humidity: parsed.humidity
+                    }
+                  });
+                }
+                
+                return parsed;
               });
             
             // CRITICAL: Check if all values are zero (sensors offline)
             const isAllZero = data.length > 0 && data.every(d => 
               d.soil_moisture === 0 && d.temperature === 0 && d.humidity === 0
             );
+            
+            console.log('📊 CSV Data Analysis:', {
+              totalRows: data.length,
+              isAllZero,
+              sampleData: data.slice(0, 3).map(d => ({
+                soil: d.soil_moisture,
+                temp: d.temperature,
+                humidity: d.humidity
+              })),
+              allSoilValues: data.slice(0, 10).map(d => d.soil_moisture)
+            });
             
             if (isAllZero) {
               console.warn('📊 FRONTEND OFFLINE MODE: Using static historical data because sensors are offline.');
@@ -89,7 +114,7 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
                 // 🔥 CRITICAL FIX: Replace the chart data state
                 setHistoricalData(convertedData);
                 console.log('✅ Fallback mock data loaded and SET TO STATE:', convertedData.length, 'points');
-                console.log('📊 Data sample:', {
+                console.log('📊 Fallback data sample:', {
                   soil_range: [Math.min(...convertedData.map(d => d.soil_moisture)), Math.max(...convertedData.map(d => d.soil_moisture))],
                   temp_range: [Math.min(...convertedData.map(d => d.temperature)), Math.max(...convertedData.map(d => d.temperature))],
                   humidity_range: [Math.min(...convertedData.map(d => d.humidity)), Math.max(...convertedData.map(d => d.humidity))]
@@ -255,6 +280,16 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
 
   // Filter data based on selected time range - OPTIMIZED for performance
   const filteredData = useMemo(() => {
+    console.log('🔍 FILTERED DATA PROCESSING:', {
+      historicalDataLength: historicalData.length,
+      selectedRange,
+      sampleHistoricalData: historicalData.slice(0, 3).map(d => ({
+        timestamp: d.timestamp,
+        soil: d.soil_moisture,
+        temp: d.temperature
+      }))
+    });
+    
     if (historicalData.length === 0) return [];
 
     // Use appropriate sample sizes for different time ranges to ensure irrigation events are visible
@@ -263,6 +298,16 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
     // Take evenly distributed samples from the dataset
     const step = Math.max(1, Math.floor(historicalData.length / maxDataPoints));
     const sampledData = historicalData.filter((_, index) => index % step === 0).slice(0, maxDataPoints);
+    
+    console.log('📊 SAMPLED DATA:', {
+      originalLength: historicalData.length,
+      step,
+      sampledLength: sampledData.length,
+      sampleValues: sampledData.slice(0, 3).map(d => ({
+        soil: d.soil_moisture,
+        temp: d.temperature
+      }))
+    });
     
     // Use fixed date range (Dec 12-19, 2025) for consistent display
     const endDate = new Date('2025-12-19T23:59:59Z');
@@ -284,7 +329,7 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
         break;
     }
     
-    return sampledData.map((item, index) => {
+    const result = sampledData.map((item, index) => {
       const displayTime = new Date(startDate.getTime() + (index * intervalMs));
       
       // Ensure irrigation events are distributed properly across time ranges
@@ -322,10 +367,33 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
         irrigationEvent: hasIrrigation
       };
     });
+    
+    console.log('✅ FINAL FILTERED DATA:', {
+      resultLength: result.length,
+      sampleResult: result.slice(0, 3).map(d => ({
+        displayTime: d.displayTime,
+        soil: d.soil_moisture,
+        temp: d.temperature,
+        rainEvent: d.rainEvent,
+        irrigationEvent: d.irrigationEvent
+      }))
+    });
+    
+    return result;
   }, [historicalData, selectedRange]);
 
   // Prepare chart data
   const chartData = useMemo(() => {
+    // 🚨 DEBUG: Check soil values
+    console.log(
+      "🚨 CHART DATA PREPARATION:",
+      {
+        filteredDataLength: filteredData.length,
+        sampleSoilValues: filteredData.slice(0, 5).map(d => d.soil_moisture),
+        selectedMetric
+      }
+    );
+    
     return filteredData.map((item, index) => {
       const date = new Date(item.displayTime);
       let timeLabel: string;
@@ -359,18 +427,31 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
           });
       }
       
-      return {
+      const chartPoint = {
         index,
         time: timeLabel,
         timestamp: item.displayTime,
-        soil: item.soil_moisture,
-        temperature: item.temperature,
-        humidity: item.humidity,
-        rainIntensity: item.rain_pct,
+        soil: Number(item.soil_moisture) || 0, // 🔥 CRITICAL FIX: Map soil_moisture to soil
+        soil_moisture: Number(item.soil_moisture) || 0, // Keep original field name too
+        temperature: Number(item.temperature) || 0,
+        humidity: Number(item.humidity) || 0,
+        rainIntensity: item.rain_pct || 0,
         rainEvent: item.rainEvent,
         irrigationEvent: item.irrigationEvent,
-        flow: item.flow
+        flow: item.flow || 0
       };
+      
+      // Debug first few chart points
+      if (index < 3) {
+        console.log(`📊 Chart point ${index}:`, {
+          soil: chartPoint.soil,
+          temperature: chartPoint.temperature,
+          humidity: chartPoint.humidity,
+          time: chartPoint.time
+        });
+      }
+      
+      return chartPoint;
     });
   }, [filteredData, selectedRange]);
 
@@ -426,7 +507,17 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
       };
     }
     
-    const values = chartData.map(d => d[selectedMetric]).filter(v => typeof v === 'number' && !isNaN(v));
+    // 🔥 CRITICAL FIX: Use correct field mapping for soil metric
+    const metricField = selectedMetric === 'soil' ? 'soil' : selectedMetric;
+    const values = chartData.map(d => d[metricField]).filter(v => typeof v === 'number' && !isNaN(v) && v > 0);
+    
+    console.log(`📊 Stats calculation for ${selectedMetric}:`, {
+      field: metricField,
+      totalPoints: chartData.length,
+      validValues: values.length,
+      sampleValues: values.slice(0, 5)
+    });
+    
     if (values.length === 0) {
       return {
         min: 0,
@@ -582,6 +673,7 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
                   stroke="#94a3b8"
                   fontSize={12}
                   tick={{ fill: '#94a3b8' }}
+                  domain={['dataMin - 5', 'dataMax + 5']}
                   label={{ 
                     value: `${selectedMetric.charAt(0).toUpperCase() + selectedMetric.slice(1)} (${getMetricUnit(selectedMetric)})`, 
                     angle: -90, 
@@ -622,6 +714,7 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
                   strokeWidth={2}
                   dot={{ fill: getMetricColor(selectedMetric), strokeWidth: 1, r: 2 }}
                   activeDot={{ r: 4, stroke: getMetricColor(selectedMetric), strokeWidth: 1 }}
+                  connectNulls={false}
                 />
                 
                 {/* Soil Moisture Comparison (when other metrics selected) */}
