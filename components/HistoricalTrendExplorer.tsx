@@ -70,7 +70,7 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
             );
             
             if (isAllZero) {
-              console.log('📊 FRONTEND OFFLINE MODE: CSV data all zeros, loading fallback mock data');
+              console.warn('📊 FRONTEND OFFLINE MODE: Using static historical data because sensors are offline.');
               // Offline Mode: Using static historical data because sensors are offline
               const fallbackResponse = await fetch('/data/historical_sensor_data.json');
               if (fallbackResponse.ok) {
@@ -85,17 +85,20 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
                   flow: item.soil_moisture < 30 ? 1.5 : 0, // Irrigation when soil low
                   pump_status: item.soil_moisture < 30
                 }));
+                
+                // 🔥 CRITICAL FIX: Replace the chart data state
                 setHistoricalData(convertedData);
-                console.log('✅ Fallback mock data loaded:', convertedData.length, 'points');
+                console.log('✅ Fallback mock data loaded and SET TO STATE:', convertedData.length, 'points');
                 console.log('📊 Data sample:', {
                   soil_range: [Math.min(...convertedData.map(d => d.soil_moisture)), Math.max(...convertedData.map(d => d.soil_moisture))],
                   temp_range: [Math.min(...convertedData.map(d => d.temperature)), Math.max(...convertedData.map(d => d.temperature))],
                   humidity_range: [Math.min(...convertedData.map(d => d.humidity)), Math.max(...convertedData.map(d => d.humidity))]
                 });
-                return;
+                return; // Exit early with mock data
               }
             }
             
+            // Normal path: use CSV data
             setHistoricalData(data);
             console.log('✅ Historical data loaded from CSV:', data.length, 'points');
             console.log('📊 Data sample:', {
@@ -134,6 +137,35 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
                   pump_status: parseFloat(values[6]) > 0 // Pump on when flow > 0
                 };
               });
+            
+            // CRITICAL: Check if all values are zero (sensors offline)
+            const isAllZero = data.length > 0 && data.every(d => 
+              d.soil_moisture === 0 && d.temperature === 0 && d.humidity === 0
+            );
+            
+            if (isAllZero) {
+              console.warn('📊 FRONTEND OFFLINE MODE: Soil CSV data all zeros, loading fallback mock data');
+              // Offline Mode: Using static historical data because sensors are offline
+              const fallbackResponse = await fetch('/data/historical_sensor_data.json');
+              if (fallbackResponse.ok) {
+                const fallbackData = await fallbackResponse.json();
+                const convertedData: HistoricalDataPoint[] = fallbackData.map((item: any) => ({
+                  timestamp: item.timestamp,
+                  soil_moisture: item.soil_moisture,
+                  temperature: item.temperature,
+                  humidity: item.humidity,
+                  rain_pct: 0,
+                  light_pct: 50,
+                  flow: item.soil_moisture < 30 ? 1.5 : 0,
+                  pump_status: item.soil_moisture < 30
+                }));
+                
+                // 🔥 CRITICAL FIX: Replace the chart data state
+                setHistoricalData(convertedData);
+                console.log('✅ Fallback mock data loaded from soil CSV fallback');
+                return;
+              }
+            }
             
             setHistoricalData(data);
             console.log('✅ Historical data loaded from soil training CSV:', data.length, 'points');
