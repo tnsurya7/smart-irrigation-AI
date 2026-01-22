@@ -218,6 +218,45 @@ latest_weather_data: Optional[Dict[str, Any]] = {
     "last_updated": datetime.utcnow().isoformat()
 }
 
+# Offline Mode: Using static historical data because sensors are offline
+def load_historical_sensor_data() -> List[Dict[str, Any]]:
+    """Load historical sensor data for offline mode demo"""
+    try:
+        import json
+        from pathlib import Path
+        
+        # Try to load from data directory
+        historical_file = Path("data/historical_sensor_data.json")
+        if not historical_file.exists():
+            # Try parent directory (for different deployment structures)
+            historical_file = Path("../data/historical_sensor_data.json")
+        
+        if historical_file.exists():
+            with open(historical_file, 'r') as f:
+                return json.load(f)
+        else:
+            logger.warning("Historical sensor data file not found")
+            return []
+            
+    except Exception as e:
+        logger.error(f"Error loading historical sensor data: {e}")
+        return []
+
+def has_meaningful_sensor_data(data: List[Dict[str, Any]]) -> bool:
+    """Check if sensor data has meaningful values (not all zeros)"""
+    if not data:
+        return False
+    
+    # Check if recent data has non-zero values
+    recent_data = data[:10] if len(data) >= 10 else data
+    for record in recent_data:
+        if (record.get('soil_moisture', 0) > 0 or 
+            record.get('temperature', 0) > 0 or 
+            record.get('humidity', 0) > 0):
+            return True
+    
+    return False
+
 # WebSocket connection manager
 class ConnectionManager:
     def __init__(self):
@@ -364,6 +403,14 @@ async def get_latest_sensor_data(limit: int = 100):
             .limit(limit)\
             .execute()
         
+        # Offline Mode: Using static historical data because sensors are offline
+        if not has_meaningful_sensor_data(result.data):
+            logger.info("Sensors offline - using historical data for charts/trends")
+            historical_data = load_historical_sensor_data()
+            if historical_data:
+                # Return the most recent historical data points
+                return {"data": historical_data[-limit:] if len(historical_data) > limit else historical_data}
+        
         return {"data": result.data}
         
     except Exception as e:
@@ -380,6 +427,19 @@ async def get_sensor_data_range(start_date: str, end_date: str):
             .lte('timestamp', end_date)\
             .order('timestamp', desc=False)\
             .execute()
+        
+        # Offline Mode: Using static historical data because sensors are offline
+        if not has_meaningful_sensor_data(result.data):
+            logger.info("Sensors offline - using historical data for date range charts")
+            historical_data = load_historical_sensor_data()
+            if historical_data:
+                # Filter historical data by date range (basic filtering)
+                filtered_data = []
+                for record in historical_data:
+                    record_date = record.get('timestamp', '')
+                    if start_date <= record_date <= end_date:
+                        filtered_data.append(record)
+                return {"data": filtered_data}
         
         return {"data": result.data}
         
