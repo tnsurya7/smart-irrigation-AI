@@ -44,6 +44,30 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
           const csvText = await csvResponse.text();
           console.log('📄 CSV Text Length:', csvText.length, 'First 200 chars:', csvText.substring(0, 200));
           
+          // 🔥 CRITICAL FIX: Detect if Vercel returned HTML instead of CSV
+          if (csvText.trim().startsWith('<!DOCTYPE html')) {
+            console.warn('⚠️ CSV fetch returned HTML — switching to offline mock data');
+            // Offline Mode: Using static historical data because sensors are offline.
+            const fallbackResponse = await fetch('/data/historical_sensor_data.json');
+            if (fallbackResponse.ok) {
+              const fallbackData = await fallbackResponse.json();
+              const convertedData: HistoricalDataPoint[] = fallbackData.map((item: any) => ({
+                timestamp: item.timestamp,
+                soil_moisture: item.soil_moisture,
+                temperature: item.temperature,
+                humidity: item.humidity,
+                rain_pct: 0,
+                light_pct: 50,
+                flow: item.soil_moisture < 30 ? 1.5 : 0,
+                pump_status: item.soil_moisture < 30
+              }));
+              
+              setHistoricalData(convertedData);
+              console.log('✅ HTML-to-CSV fallback data loaded:', convertedData.length, 'points');
+              return;
+            }
+          }
+          
           const lines = csvText.trim().split('\n');
           
           if (lines.length >= 2) {
@@ -181,6 +205,31 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
         
         if (soilCsvResponse.ok) {
           const csvText = await soilCsvResponse.text();
+          
+          // 🔥 CRITICAL FIX: Detect if Vercel returned HTML instead of CSV
+          if (csvText.trim().startsWith('<!DOCTYPE html')) {
+            console.warn('⚠️ Soil CSV fetch returned HTML — switching to offline mock data');
+            // Offline Mode: Using static historical data because sensors are offline.
+            const fallbackResponse = await fetch('/data/historical_sensor_data.json');
+            if (fallbackResponse.ok) {
+              const fallbackData = await fallbackResponse.json();
+              const convertedData: HistoricalDataPoint[] = fallbackData.map((item: any) => ({
+                timestamp: item.timestamp,
+                soil_moisture: item.soil_moisture,
+                temperature: item.temperature,
+                humidity: item.humidity,
+                rain_pct: 0,
+                light_pct: 50,
+                flow: item.soil_moisture < 30 ? 1.5 : 0,
+                pump_status: item.soil_moisture < 30
+              }));
+              
+              setHistoricalData(convertedData);
+              console.log('✅ Soil CSV HTML-to-fallback data loaded:', convertedData.length, 'points');
+              return;
+            }
+          }
+          
           const lines = csvText.trim().split('\n');
           
           if (lines.length >= 2) {
