@@ -18,8 +18,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def start_weather_email_service():
-    """Start the weather email service in a background thread"""
+    """Start the weather email service in a background thread with proper event loop"""
     try:
+        # Create and set event loop for this thread
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
         # Use environment variables only - no hardcoded credentials
         email_user = os.getenv('EMAIL_USER')
         email_pass = os.getenv('EMAIL_PASS')
@@ -42,6 +47,13 @@ def start_weather_email_service():
         
         if service:
             logger.info("✅ Daily Weather Email Service auto-started successfully!")
+            # Keep the event loop running to maintain the scheduler
+            try:
+                loop.run_forever()
+            except KeyboardInterrupt:
+                logger.info("🛑 Weather Email Service stopped")
+                if hasattr(service, 'scheduler') and service.scheduler.running:
+                    service.stop_scheduler()
         else:
             logger.warning("⚠️ Daily Weather Email Service failed to start (main app continues)")
             
