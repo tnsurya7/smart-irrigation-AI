@@ -135,10 +135,12 @@ class DailyWeatherEmailService:
         
         # Different greetings based on time of day
         if time_of_day == "morning":
-            greeting = "Good Morning ☀️<br>Have a nice day and a successful farming day ahead."
+            greeting_title = "Good Morning ☀️"
+            greeting_message = "Have a nice day and a successful farming day ahead."
             report_title = "🌅 Morning Weather Report"
         else:
-            greeting = "Good Evening 🌅<br>Here's your evening weather update for tomorrow's planning."
+            greeting_title = "Good Evening 🌙"
+            greeting_message = "Here's your evening weather update for tomorrow's planning."
             report_title = "🌆 Evening Weather Report"
         
         rain_alert_html = ""
@@ -160,218 +162,228 @@ class DailyWeatherEmailService:
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Daily Weather Report - Smart Agriculture</title>
+            <title>{time_of_day.title()} Weather Report - {city_name}</title>
             <style>
-                * {{
-                    margin: 0;
-                    padding: 0;
-                    box-sizing: border-box;
-                }}
-                
                 body {{
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    line-height: 1.6;
-                    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+                    margin: 0;
                     padding: 20px;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                    background: linear-gradient(135deg, #a8e6cf 0%, #88d8a3 100%);
+                    min-height: 100vh;
                 }}
                 
                 .email-container {{
-                    max-width: 600px;
+                    max-width: 400px;
                     margin: 0 auto;
                     background: white;
-                    border-radius: 15px;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                    border-radius: 20px;
                     overflow: hidden;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
                 }}
                 
                 .header {{
-                    background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+                    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
                     color: white;
-                    padding: 30px 20px;
+                    padding: 25px 20px;
                     text-align: center;
                 }}
                 
                 .header h1 {{
-                    font-size: 28px;
-                    margin-bottom: 10px;
+                    margin: 0;
+                    font-size: 20px;
                     font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
                 }}
                 
                 .header .date {{
-                    font-size: 16px;
+                    margin: 8px 0 0 0;
+                    font-size: 14px;
                     opacity: 0.9;
+                    font-weight: 400;
                 }}
                 
-                .greeting {{
-                    background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%);
-                    color: white;
+                .greeting-section {{
+                    background: #f8f9fa;
                     padding: 25px 20px;
                     text-align: center;
-                    font-size: 18px;
-                    font-weight: 500;
                 }}
                 
-                .content {{
-                    padding: 30px 20px;
+                .greeting-section h2 {{
+                    margin: 0 0 8px 0;
+                    color: #4CAF50;
+                    font-size: 22px;
+                    font-weight: 600;
+                }}
+                
+                .greeting-section p {{
+                    margin: 0;
+                    color: #666;
+                    font-size: 14px;
+                    line-height: 1.4;
+                }}
+                
+                .location-section {{
+                    background: #e8f5e8;
+                    padding: 15px 20px;
+                    text-align: center;
+                }}
+                
+                .location-section p {{
+                    margin: 0;
+                    color: #4CAF50;
+                    font-size: 16px;
+                    font-weight: 600;
+                }}
+                
+                .weather-cards {{
+                    padding: 25px 20px;
+                    background: white;
+                }}
+                
+                .cards-grid {{
+                    display: grid;
+                    grid-template-columns: 1fr 1fr 1fr 1fr;
+                    gap: 2px;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                 }}
                 
                 .weather-card {{
-                    background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
-                    border-radius: 12px;
-                    padding: 25px;
-                    margin-bottom: 25px;
-                    border-left: 5px solid #4caf50;
+                    padding: 20px 12px;
+                    text-align: center;
+                    position: relative;
                 }}
                 
-                .weather-header {{
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    margin-bottom: 20px;
-                    flex-wrap: wrap;
+                .weather-card.temperature {{
+                    background: linear-gradient(135deg, #FFF3CD 0%, #FFF8DC 100%);
+                    border-left: 4px solid #FFC107;
                 }}
                 
-                .weather-location {{
+                .weather-card.humidity {{
+                    background: linear-gradient(135deg, #D1ECF1 0%, #E1F5FE 100%);
+                    border-left: 4px solid #17A2B8;
+                }}
+                
+                .weather-card.condition {{
+                    background: linear-gradient(135deg, #D4EDDA 0%, #E8F5E9 100%);
+                    border-left: 4px solid #28A745;
+                }}
+                
+                .weather-card.rain {{
+                    background: linear-gradient(135deg, #F8D7DA 0%, #FFEBEE 100%);
+                    border-left: 4px solid #DC3545;
+                }}
+                
+                .card-icon {{
                     font-size: 20px;
-                    font-weight: 600;
-                    color: #2e7d32;
+                    margin-bottom: 8px;
+                    display: block;
                 }}
                 
-                .weather-icon {{
-                    width: 60px;
-                    height: 60px;
-                }}
-                
-                .weather-details {{
-                    width: 100%;
-                    margin-bottom: 20px;
-                }}
-                
-                .weather-table {{
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 20px;
-                }}
-                
-                .weather-table td {{
-                    width: 50%;
-                    padding: 15px 8px;
-                    text-align: center;
-                    vertical-align: top;
-                }}
-                
-                .weather-item {{
-                    background: white;
-                    padding: 15px;
-                    border-radius: 8px;
-                    text-align: center;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                }}
-                
-                .weather-item .label {{
+                .card-label {{
                     font-size: 12px;
                     color: #666;
-                    text-transform: uppercase;
                     font-weight: 600;
-                    margin-bottom: 5px;
+                    margin-bottom: 8px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
                 }}
                 
-                .weather-item .value {{
-                    font-size: 24px;
+                .card-value {{
+                    font-size: 18px;
                     font-weight: 700;
-                    color: #2e7d32;
+                    color: #2E7D32;
+                    line-height: 1;
                 }}
                 
-                .weather-item .unit {{
-                    font-size: 14px;
-                    color: #666;
+                .card-value.condition-text {{
+                    font-size: 11px;
+                    text-transform: capitalize;
+                    line-height: 1.2;
+                    font-weight: 600;
                 }}
                 
                 .irrigation-section {{
-                    background: {irrigation_bg_color};
-                    border-radius: 12px;
-                    padding: 25px;
-                    margin-bottom: 25px;
-                    border-left: 5px solid {irrigation_border_color};
+                    background: white;
+                    padding: 25px 20px;
+                    text-align: center;
                 }}
                 
                 .irrigation-question {{
-                    font-size: 18px;
+                    color: #4CAF50;
+                    font-size: 16px;
                     font-weight: 600;
-                    color: #333;
                     margin-bottom: 15px;
                 }}
                 
                 .irrigation-answer {{
-                    font-size: 24px;
-                    font-weight: 700;
-                    color: {irrigation_text_color};
-                    margin-bottom: 10px;
-                }}
-                
-                .irrigation-reason {{
-                    font-size: 14px;
-                    color: #666;
-                    font-style: italic;
-                }}
-                
-                .rain-alert {{
-                    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-                    border: 2px solid #f44336;
+                    background: white;
+                    border: 2px solid {irrigation_border_color};
                     border-radius: 12px;
                     padding: 20px;
-                    margin-bottom: 25px;
-                    text-align: center;
+                    margin: 0 auto;
+                    max-width: 280px;
                 }}
                 
-                .rain-alert .alert-icon {{
-                    font-size: 30px;
-                    margin-bottom: 10px;
+                .irrigation-status {{
+                    font-size: 28px;
+                    font-weight: 700;
+                    color: {irrigation_text_color};
+                    margin-bottom: 8px;
                 }}
                 
-                .rain-alert .alert-text {{
-                    font-size: 16px;
+                .irrigation-message {{
+                    font-size: 14px;
+                    color: {irrigation_text_color};
                     font-weight: 600;
-                    color: #c62828;
                 }}
                 
                 .footer {{
-                    background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+                    background: linear-gradient(135deg, #2E7D32 0%, #388E3C 100%);
                     color: white;
-                    padding: 25px 20px;
+                    padding: 20px;
                     text-align: center;
                 }}
                 
-                .footer .system-name {{
-                    font-size: 18px;
+                .footer h3 {{
+                    margin: 0 0 5px 0;
+                    font-size: 16px;
                     font-weight: 600;
-                    margin-bottom: 5px;
                 }}
                 
-                .footer .location {{
-                    font-size: 14px;
+                .footer p {{
+                    margin: 0;
+                    font-size: 13px;
                     opacity: 0.9;
                 }}
                 
-                @media (max-width: 600px) {{
-                    .weather-header {{
-                        flex-direction: column;
-                        text-align: center;
+                .footer .test-note {{
+                    margin-top: 10px;
+                    font-size: 11px;
+                    opacity: 0.7;
+                }}
+                
+                /* Mobile Responsive */
+                @media (max-width: 480px) {{
+                    .email-container {{
+                        margin: 10px;
+                        max-width: none;
                     }}
                     
-                    .weather-table td {{
-                        padding: 10px 5px !important;
+                    .cards-grid {{
+                        grid-template-columns: 1fr 1fr;
+                        gap: 8px;
                     }}
                     
-                    .weather-item .value {{
-                        font-size: 20px !important;
+                    .weather-card {{
+                        padding: 15px 8px;
                     }}
                     
-                    .header h1 {{
-                        font-size: 24px;
-                    }}
-                    
-                    .greeting {{
+                    .card-value {{
                         font-size: 16px;
                     }}
                 }}
@@ -379,69 +391,76 @@ class DailyWeatherEmailService:
         </head>
         <body>
             <div class="email-container">
+                
+                <!-- Header -->
                 <div class="header">
-                    <h1>🌱 {report_title}</h1>
+                    <h1>
+                        <span>🌱📊</span>
+                        {time_of_day.title()} Weather Report
+                    </h1>
                     <div class="date">{current_date} - {current_time}</div>
                 </div>
                 
-                <div class="greeting">
-                    {greeting}
+                <!-- Greeting -->
+                <div class="greeting-section">
+                    <h2>{greeting_title}</h2>
+                    <p>{greeting_message}</p>
                 </div>
                 
-                <div class="content">
-                    <div class="weather-card">
-                        <div class="weather-header">
-                            <div class="weather-location">📍 {city_name}</div>
-                            <img src="{weather_icon_url}" alt="{description}" class="weather-icon">
+                <!-- Location -->
+                <div class="location-section">
+                    <p>📍 {city_name}</p>
+                </div>
+                
+                <!-- Weather Cards -->
+                <div class="weather-cards">
+                    <div class="cards-grid">
+                        <div class="weather-card temperature">
+                            <span class="card-icon">🌡️</span>
+                            <div class="card-label">Temperature</div>
+                            <div class="card-value">{temperature}°C</div>
                         </div>
                         
-                        <div class="weather-details">
-                            <table class="weather-table" cellpadding="0" cellspacing="0">
-                                <tr>
-                                    <td style="background: #fff3cd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                                        <div class="weather-item">
-                                            <div class="label">🌡️ Temperature</div>
-                                            <div class="value">{temperature}<span class="unit">°C</span></div>
-                                        </div>
-                                    </td>
-                                    <td style="background: #d1ecf1; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                                        <div class="weather-item">
-                                            <div class="label">💧 Humidity</div>
-                                            <div class="value">{humidity}<span class="unit">%</span></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="background: #d4edda; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding-top: 15px;">
-                                        <div class="weather-item">
-                                            <div class="label">☁️ Condition</div>
-                                            <div class="value" style="font-size: 16px; text-transform: capitalize;">{description}</div>
-                                        </div>
-                                    </td>
-                                    <td style="background: #f8d7da; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding-top: 15px;">
-                                        <div class="weather-item">
-                                            <div class="label">🌧️ Rain Chance</div>
-                                            <div class="value">{rain_probability}<span class="unit">%</span></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
+                        <div class="weather-card humidity">
+                            <span class="card-icon">💧</span>
+                            <div class="card-label">Humidity</div>
+                            <div class="card-value">{humidity}%</div>
                         </div>
-                    </div>
-                    
-                    {rain_alert_html}
-                    
-                    <div class="irrigation-section">
-                        <div class="irrigation-question">🚿 Is today good for irrigation?</div>
-                        <div class="irrigation-answer">{irrigation_status}</div>
-                        <div class="irrigation-reason">{irrigation_recommendation}</div>
+                        
+                        <div class="weather-card condition">
+                            <span class="card-icon">☁️</span>
+                            <div class="card-label">Condition</div>
+                            <div class="card-value condition-text">{description}</div>
+                        </div>
+                        
+                        <div class="weather-card rain">
+                            <span class="card-icon">🌧️</span>
+                            <div class="card-label">Rain Chance</div>
+                            <div class="card-value">{rain_probability}%</div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="footer">
-                    <div class="system-name">Smart Agriculture System</div>
-                    <div class="location">Location: Erode, Tamil Nadu</div>
+                <!-- Irrigation Section -->
+                <div class="irrigation-section">
+                    <div class="irrigation-question">
+                        🚿 Is today good for irrigation?
+                    </div>
+                    <div class="irrigation-answer">
+                        <div class="irrigation-status">{irrigation_status}</div>
+                        <div class="irrigation-message">{irrigation_recommendation}</div>
+                    </div>
                 </div>
+                
+                <!-- Footer -->
+                <div class="footer">
+                    <h3>Smart Agriculture System</h3>
+                    <p>Location: {city_name}, Tamil Nadu</p>
+                    <div class="test-note">
+                        ✅ Updated template design with proper grid layout
+                    </div>
+                </div>
+                
             </div>
         </body>
         </html>
