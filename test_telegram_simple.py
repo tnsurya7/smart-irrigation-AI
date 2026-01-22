@@ -3,12 +3,17 @@
 Test the simple telegram bot functionality
 """
 
+import os
 import requests
 import json
 import time
 
-BOT_TOKEN = "***REMOVED***"
-CHAT_ID = "***REMOVED***"
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+if not BOT_TOKEN or not CHAT_ID:
+    print("❌ Missing environment variables: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID")
+    exit(1)
 
 def send_command(command):
     """Send a command to the bot"""

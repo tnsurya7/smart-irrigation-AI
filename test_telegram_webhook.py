@@ -10,9 +10,13 @@ import json
 from datetime import datetime
 
 # Configuration
-BOT_TOKEN = "***REMOVED***"
-CHAT_ID = "***REMOVED***"
-BACKEND_URL = "https://smart-agriculture-backend-my7c.onrender.com"
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+BACKEND_URL = os.getenv("BACKEND_URL", "https://smart-agriculture-backend-my7c.onrender.com")
+
+if not BOT_TOKEN or not CHAT_ID:
+    print("❌ Missing environment variables: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID")
+    exit(1)
 
 # Telegram API
 TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}"

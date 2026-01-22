@@ -27,8 +27,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Telegram Bot Configuration
-BOT_TOKEN = "***REMOVED***"
-CHAT_ID = "***REMOVED***"
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+if not BOT_TOKEN or not CHAT_ID:
+    print("❌ Missing environment variables: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID")
+    exit(1)
 
 # FastAPI Backend Configuration
 BACKEND_URL = "http://localhost:8000"

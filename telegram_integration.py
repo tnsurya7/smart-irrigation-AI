@@ -6,6 +6,7 @@ Integrates Telegram alerts with the existing Smart Agriculture Dashboard
 
 import requests
 import json
+import os
 from datetime import datetime
 from typing import Dict, Any, Optional
 import logging
@@ -13,8 +14,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Telegram Bot Configuration
-BOT_TOKEN = "***REMOVED***"
-CHAT_ID = "***REMOVED***"
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+if not BOT_TOKEN or not CHAT_ID:
+    print("❌ Missing environment variables: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID")
+    exit(1)
 
 class TelegramNotifier:
     def __init__(self):

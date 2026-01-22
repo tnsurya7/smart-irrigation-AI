@@ -8,9 +8,9 @@ services:
     startCommand: python telegram_production.py
     envVars:
       - key: TELEGRAM_BOT_TOKEN
-        value: ***REMOVED***
+        fromGroup: smart-agriculture-secrets
       - key: TELEGRAM_CHAT_ID
-        value: ***REMOVED***
+        fromGroup: smart-agriculture-secrets
       - key: OPENWEATHER_API_KEY
         value: your-openweather-api-key-here
       - key: BACKEND_URL

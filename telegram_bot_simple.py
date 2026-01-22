@@ -18,7 +18,9 @@ import time
 import threading
 import asyncio
 import websockets
-import schedule
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 import logging
@@ -456,24 +458,36 @@ def send_daily_dashboard():
     bot.send_message(message)
     logger.info("📅 Daily dashboard report sent")
 
-def run_scheduler():
-    """Run scheduled tasks"""
-    schedule.every().day.at("07:00").do(send_daily_weather)
-    schedule.every().day.at("18:00").do(send_daily_dashboard)
+def setup_scheduler():
+    """Setup APScheduler for daily tasks"""
+    scheduler = AsyncIOScheduler(timezone=pytz.timezone('Asia/Kolkata'))
     
-    logger.info("📅 Scheduler started - Daily reports at 7 AM and 6 PM")
+    # Schedule daily weather at 7:00 AM IST
+    scheduler.add_job(
+        func=send_daily_weather,
+        trigger=CronTrigger(hour=7, minute=0, timezone=pytz.timezone('Asia/Kolkata')),
+        id='daily_weather',
+        replace_existing=True
+    )
     
-    while True:
-        schedule.run_pending()
-        time.sleep(60)  # Check every minute
+    # Schedule daily dashboard at 6:00 PM IST
+    scheduler.add_job(
+        func=send_daily_dashboard,
+        trigger=CronTrigger(hour=18, minute=0, timezone=pytz.timezone('Asia/Kolkata')),
+        id='daily_dashboard',
+        replace_existing=True
+    )
+    
+    scheduler.start()
+    logger.info("📅 APScheduler started - Daily reports at 7 AM and 6 PM IST")
+    return scheduler
 
 def main():
     """Main function"""
     logger.info("=== Simple Smart Agriculture Telegram Bot ===")
     
-    # Start scheduler in background thread
-    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
-    scheduler_thread.start()
+    # Setup and start scheduler
+    scheduler = setup_scheduler()
     
     # Start bot
     bot = TelegramBot()

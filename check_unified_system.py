@@ -62,7 +62,11 @@ def check_telegram_bot():
     """Test Telegram bot"""
     print("\n🤖 Testing Telegram Bot:")
     try:
-        bot_token = "***REMOVED***"
+        bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+        if not bot_token:
+            print("❌ TELEGRAM_BOT_TOKEN not found in environment variables")
+            return
+        
         url = f"https://api.telegram.org/bot{bot_token}/getMe"
         response = requests.get(url, timeout=10)
         

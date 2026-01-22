@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import requests
 import json
+import os
 from datetime import datetime
 import logging
 
@@ -16,9 +17,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Telegram Bot Configuration
-BOT_TOKEN = "***REMOVED***"
-CHAT_ID = "***REMOVED***"
-BACKEND_URL = "http://localhost:8000"
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+
+if not BOT_TOKEN or not CHAT_ID:
+    print("❌ Missing environment variables: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID")
+    exit(1)
 
 app = FastAPI(title="Telegram Bot Webhook")
 

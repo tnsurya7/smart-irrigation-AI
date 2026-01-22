@@ -7,12 +7,17 @@ Comprehensive testing of all alert functions and commands
 import requests
 import json
 import time
+import os
 from datetime import datetime
 
 # Configuration
-BOT_TOKEN = "***REMOVED***"
-CHAT_ID = "***REMOVED***"
-TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}" if BOT_TOKEN else None
+
+if not BOT_TOKEN or not CHAT_ID:
+    print("❌ Missing environment variables: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID")
+    exit(1)
 
 def send_test_command(command: str, description: str):
     """Send a test command and log the result"""

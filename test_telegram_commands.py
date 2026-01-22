@@ -5,11 +5,19 @@ Test Telegram bot commands in unified system
 import requests
 import json
 import time
+import os
 
 def send_telegram_message(message):
     """Send a message to the Telegram bot"""
-    bot_token = "***REMOVED***"
-    chat_id = "***REMOVED***"
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    if not bot_token:
+        print("❌ TELEGRAM_BOT_TOKEN not found in environment variables")
+        return False
+    
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not chat_id:
+        print("❌ TELEGRAM_CHAT_ID not found in environment variables")
+        return False
     
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {

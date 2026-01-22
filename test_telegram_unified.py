@@ -4,12 +4,16 @@ Test Telegram bot functionality in unified server
 """
 import requests
 import json
+import os
 
 def test_telegram_bot():
     """Test if Telegram bot is responding"""
     
     # Test bot info
-    bot_token = "***REMOVED***"
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    if not bot_token:
+        print("❌ TELEGRAM_BOT_TOKEN not found in environment variables")
+        return
     
     try:
         # Get bot info

@@ -20,7 +20,9 @@ from typing import Dict, Any, List, Optional
 
 import pandas as pd
 import requests
-import schedule
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
@@ -927,19 +929,46 @@ def start_scheduler():
             telegram_bot.send_message(message)
             logger.info(f"🚨 Rain alert sent - {weather['rain_probability']}% probability")
     
-    # Schedule tasks
-    schedule.every().day.at("07:00").do(send_morning_weather_report)  # 7 AM weather report
-    schedule.every().day.at("20:00").do(send_evening_dashboard_summary)  # 8 PM dashboard summary
-    schedule.every().hour.do(check_rain_alerts)  # Hourly rain alerts
+    # Setup APScheduler
+    scheduler = AsyncIOScheduler(timezone=pytz.timezone('Asia/Kolkata'))
     
-    logger.info("📅 Scheduled tasks configured:")
-    logger.info("  • 07:00 - Morning weather report")
-    logger.info("  • 20:00 - Evening dashboard summary")
+    # Schedule tasks
+    scheduler.add_job(
+        func=send_morning_weather_report,
+        trigger=CronTrigger(hour=7, minute=0, timezone=pytz.timezone('Asia/Kolkata')),
+        id='morning_weather',
+        replace_existing=True
+    )
+    
+    scheduler.add_job(
+        func=send_evening_dashboard_summary,
+        trigger=CronTrigger(hour=20, minute=0, timezone=pytz.timezone('Asia/Kolkata')),
+        id='evening_dashboard',
+        replace_existing=True
+    )
+    
+    scheduler.add_job(
+        func=check_rain_alerts,
+        trigger=CronTrigger(minute=0, timezone=pytz.timezone('Asia/Kolkata')),  # Every hour
+        id='rain_alerts',
+        replace_existing=True
+    )
+    
+    scheduler.start()
+    
+    logger.info("📅 APScheduler configured:")
+    logger.info("  • 07:00 IST - Morning weather report")
+    logger.info("  • 20:00 IST - Evening dashboard summary")
     logger.info("  • Every hour - Rain alert check")
     
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
+    # Keep scheduler running
+    try:
+        import asyncio
+        loop = asyncio.get_event_loop()
+        loop.run_forever()
+    except KeyboardInterrupt:
+        scheduler.shutdown()
+        logger.info("📅 Scheduler stopped")
 
 @app.on_event("startup")
 async def startup_event():

@@ -7,7 +7,9 @@ Provides weather reports, irrigation alerts, and sensor monitoring via Telegram 
 import requests
 import json
 import time
-import schedule
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
 import threading
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
@@ -19,8 +21,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Telegram Bot Configuration
-BOT_TOKEN = "***REMOVED***"
-CHAT_ID = "***REMOVED***"
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+if not BOT_TOKEN or not CHAT_ID:
+    print("❌ Missing environment variables: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID")
+    exit(1)
 
 # OpenWeather API Configuration
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
@@ -357,26 +363,38 @@ def run_monitoring_loop():
             time.sleep(60)  # Wait longer on error
 
 def start_scheduler():
-    """Start scheduled jobs"""
-    logger.info("Starting scheduler...")
+    """Start APScheduler for scheduled jobs"""
+    logger.info("Starting APScheduler...")
     
-    # Schedule daily weather report at 7:00 AM
-    schedule.every().day.at("07:00").do(send_daily_weather_report)
+    scheduler = AsyncIOScheduler(timezone=pytz.timezone('Asia/Kolkata'))
     
-    # Schedule daily dashboard summary at 8:00 PM
-    schedule.every().day.at("20:00").do(send_daily_dashboard_summary)
+    # Schedule daily weather report at 7:00 AM IST
+    scheduler.add_job(
+        func=send_daily_weather_report,
+        trigger=CronTrigger(hour=7, minute=0, timezone=pytz.timezone('Asia/Kolkata')),
+        id='daily_weather_report',
+        replace_existing=True
+    )
     
-    # Schedule water usage summary at 9:00 PM
-    schedule.every().day.at("21:00").do(send_water_usage_summary)
+    # Schedule daily dashboard summary at 8:00 PM IST
+    scheduler.add_job(
+        func=send_daily_dashboard_summary,
+        trigger=CronTrigger(hour=20, minute=0, timezone=pytz.timezone('Asia/Kolkata')),
+        id='daily_dashboard_summary',
+        replace_existing=True
+    )
     
-    # Run scheduler in separate thread
-    def run_scheduler():
-        while True:
-            schedule.run_pending()
-            time.sleep(60)
+    # Schedule water usage summary at 9:00 PM IST
+    scheduler.add_job(
+        func=send_water_usage_summary,
+        trigger=CronTrigger(hour=21, minute=0, timezone=pytz.timezone('Asia/Kolkata')),
+        id='water_usage_summary',
+        replace_existing=True
+    )
     
-    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
-    scheduler_thread.start()
+    scheduler.start()
+    logger.info("✅ APScheduler started with IST timezone")
+    return scheduler
 
 def test_telegram_connection():
     """Test Telegram bot connection"""
