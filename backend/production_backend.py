@@ -961,7 +961,7 @@ async def startup_event():
         if service:
             logger.info("✅ Daily Weather Email Service started successfully")
             logger.info("📧 Email service configured via environment variables")
-            logger.info("⏰ Schedule: 6:00 AM and 7:00 PM IST daily")
+            logger.info("⏰ Schedule: Every 3 hours (12AM, 3AM, 6AM, 9AM, 12PM, 3PM, 6PM, 9PM IST)")
         else:
             logger.warning("⚠️ Daily Weather Email Service failed to start")
             

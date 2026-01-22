@@ -516,28 +516,19 @@ class DailyWeatherEmailService:
             # Don't raise error to prevent affecting main application
 
     def schedule_daily_email(self):
-        """Schedule daily emails at 6:00 AM and 7:00 PM IST using APScheduler"""
-        print("⏰ Daily Weather Email Service: Scheduling daily emails at 6:00 AM and 7:00 PM IST")
+        """Email schedule updated to every 3 hours using existing template."""
+        print("⏰ Daily Weather Email Service: Scheduling emails every 3 hours IST")
         
-        # Schedule morning email at 6:00 AM IST
+        # Schedule email every 3 hours starting from midnight (0, 3, 6, 9, 12, 15, 18, 21)
         self.scheduler.add_job(
             func=self.send_daily_weather_email,
-            trigger=CronTrigger(hour=6, minute=0, timezone=pytz.timezone('Asia/Kolkata')),
-            args=['morning'],
-            id='morning_weather_email',
+            trigger=CronTrigger(hour='0,3,6,9,12,15,18,21', minute=0, timezone=pytz.timezone('Asia/Kolkata')),
+            args=['morning'],  # Reuse existing email template
+            id='every_3_hours_weather_email',
             replace_existing=True
         )
         
-        # Schedule evening email at 7:00 PM IST (19:00)
-        self.scheduler.add_job(
-            func=self.send_daily_weather_email,
-            trigger=CronTrigger(hour=19, minute=0, timezone=pytz.timezone('Asia/Kolkata')),
-            args=['evening'],
-            id='evening_weather_email',
-            replace_existing=True
-        )
-        
-        print("✅ Daily Weather Email Service: Morning (6:00 AM) and Evening (7:00 PM) schedules configured")
+        print("✅ Daily Weather Email Service: Every 3 hours schedule configured (12AM, 3AM, 6AM, 9AM, 12PM, 3PM, 6PM, 9PM IST)")
 
     def start_scheduler(self):
         """Start the APScheduler"""
@@ -568,7 +559,7 @@ class DailyWeatherEmailService:
             self.start_scheduler()
             print("✅ Daily Weather Email Service (Python): Initialized successfully")
             print("📧 Email service configured via environment variables")
-            print("⏰ Schedule: 6:00 AM and 7:00 PM IST daily")
+            print("⏰ Schedule: Every 3 hours (12AM, 3AM, 6AM, 9AM, 12PM, 3PM, 6PM, 9PM IST)")
             
             # Uncomment to send a test email on startup
             # asyncio.create_task(self.send_test_email("morning"))

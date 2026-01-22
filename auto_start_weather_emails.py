@@ -41,7 +41,7 @@ def start_weather_email_service():
         
         logger.info("🌱 Auto-starting Daily Weather Email Service...")
         logger.info("📧 Email service configured via environment variables")
-        logger.info("⏰ Schedule: 6:00 AM and 7:00 PM IST daily")
+        logger.info("⏰ Schedule: Every 3 hours (12AM, 3AM, 6AM, 9AM, 12PM, 3PM, 6PM, 9PM IST)")
         
         service = initialize_daily_weather_email()
         
