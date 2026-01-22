@@ -409,9 +409,22 @@ async def get_latest_sensor_data(limit: int = 100):
             .limit(limit)\
             .execute()
         
+        # CRITICAL: Check if all values are zero (sensors offline)
+        all_zero = (
+            result.data and
+            len(result.data) > 0 and
+            all(
+                row.get("soil_moisture", 0) == 0 and
+                row.get("temperature", 0) == 0 and
+                row.get("humidity", 0) == 0
+                for row in result.data[:10]  # Check recent 10 records
+            )
+        )
+        
         # Offline Mode: Using static historical data because sensors are offline
-        if not has_meaningful_sensor_data(result.data):
-            logger.info("Sensors offline - using historical data for charts/trends")
+        if not result.data or len(result.data) == 0 or all_zero:
+            print("📊 OFFLINE HISTORY MODE ACTIVE – MOCK DATA SERVED")
+            logger.info("OFFLINE MODE: Serving mock historical data for charts")
             historical_data = load_historical_sensor_data()
             if historical_data:
                 # Return the most recent historical data points
@@ -434,9 +447,22 @@ async def get_sensor_data_range(start_date: str, end_date: str):
             .order('timestamp', desc=False)\
             .execute()
         
+        # CRITICAL: Check if all values are zero (sensors offline)
+        all_zero = (
+            result.data and
+            len(result.data) > 0 and
+            all(
+                row.get("soil_moisture", 0) == 0 and
+                row.get("temperature", 0) == 0 and
+                row.get("humidity", 0) == 0
+                for row in result.data[:10]  # Check recent 10 records
+            )
+        )
+        
         # Offline Mode: Using static historical data because sensors are offline
-        if not has_meaningful_sensor_data(result.data):
-            logger.info("Sensors offline - using historical data for date range charts")
+        if not result.data or len(result.data) == 0 or all_zero:
+            print("📊 OFFLINE HISTORY MODE ACTIVE – MOCK DATA SERVED")
+            logger.info("OFFLINE MODE: Serving mock historical data for date range charts")
             historical_data = load_historical_sensor_data()
             if historical_data:
                 # Filter historical data by date range (basic filtering)
@@ -445,7 +471,7 @@ async def get_sensor_data_range(start_date: str, end_date: str):
                     record_date = record.get('timestamp', '')
                     if start_date <= record_date <= end_date:
                         filtered_data.append(record)
-                return {"data": filtered_data}
+                return {"data": filtered_data if filtered_data else historical_data}
         
         return {"data": result.data}
         
