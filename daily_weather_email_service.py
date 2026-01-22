@@ -243,10 +243,21 @@ class DailyWeatherEmailService:
                 }}
                 
                 .weather-details {{
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                    gap: 15px;
+                    width: 100%;
                     margin-bottom: 20px;
+                }}
+                
+                .weather-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }}
+                
+                .weather-table td {{
+                    width: 50%;
+                    padding: 15px 8px;
+                    text-align: center;
+                    vertical-align: top;
                 }}
                 
                 .weather-item {{
@@ -348,8 +359,12 @@ class DailyWeatherEmailService:
                         text-align: center;
                     }}
                     
-                    .weather-details {{
-                        grid-template-columns: 1fr;
+                    .weather-table td {{
+                        padding: 10px 5px !important;
+                    }}
+                    
+                    .weather-item .value {{
+                        font-size: 20px !important;
                     }}
                     
                     .header h1 {{
@@ -381,22 +396,36 @@ class DailyWeatherEmailService:
                         </div>
                         
                         <div class="weather-details">
-                            <div class="weather-item">
-                                <div class="label">Temperature</div>
-                                <div class="value">{temperature}<span class="unit">°C</span></div>
-                            </div>
-                            <div class="weather-item">
-                                <div class="label">Humidity</div>
-                                <div class="value">{humidity}<span class="unit">%</span></div>
-                            </div>
-                            <div class="weather-item">
-                                <div class="label">Condition</div>
-                                <div class="value" style="font-size: 16px; text-transform: capitalize;">{description}</div>
-                            </div>
-                            <div class="weather-item">
-                                <div class="label">Rain Chance</div>
-                                <div class="value">{rain_probability}<span class="unit">%</span></div>
-                            </div>
+                            <table class="weather-table" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="background: #fff3cd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                        <div class="weather-item">
+                                            <div class="label">🌡️ Temperature</div>
+                                            <div class="value">{temperature}<span class="unit">°C</span></div>
+                                        </div>
+                                    </td>
+                                    <td style="background: #d1ecf1; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                        <div class="weather-item">
+                                            <div class="label">💧 Humidity</div>
+                                            <div class="value">{humidity}<span class="unit">%</span></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="background: #d4edda; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding-top: 15px;">
+                                        <div class="weather-item">
+                                            <div class="label">☁️ Condition</div>
+                                            <div class="value" style="font-size: 16px; text-transform: capitalize;">{description}</div>
+                                        </div>
+                                    </td>
+                                    <td style="background: #f8d7da; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding-top: 15px;">
+                                        <div class="weather-item">
+                                            <div class="label">🌧️ Rain Chance</div>
+                                            <div class="value">{rain_probability}<span class="unit">%</span></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
                     
