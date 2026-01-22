@@ -33,15 +33,23 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
       try {
         setLoading(true);
         
+        console.log('🚀 Starting data load process...');
+        
         // Primary: Load from CSV file (most reliable for frontend)
-        const csvResponse = await fetch('/arimax_real_sensor_data.csv');
+        try {
+          const csvResponse = await fetch('/arimax_real_sensor_data.csv');
+          
+          console.log('🌐 CSV Response Status:', csvResponse.status, csvResponse.statusText);
         
         if (csvResponse.ok) {
           const csvText = await csvResponse.text();
+          console.log('📄 CSV Text Length:', csvText.length, 'First 200 chars:', csvText.substring(0, 200));
+          
           const lines = csvText.trim().split('\n');
           
           if (lines.length >= 2) {
             const headers = lines[0].split(',');
+            console.log('📋 CSV Headers:', headers);
             
             // Load every 70th row for better performance (100 data points from 7000 rows)
             const dataLines = lines.slice(1);
@@ -91,15 +99,24 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
                 temp: d.temperature,
                 humidity: d.humidity
               })),
-              allSoilValues: data.slice(0, 10).map(d => d.soil_moisture)
+              allSoilValues: data.slice(0, 10).map(d => d.soil_moisture),
+              environment: import.meta.env.MODE,
+              isVercel: typeof window !== 'undefined' && window.location.hostname.includes('vercel')
             });
             
             if (isAllZero) {
               console.warn('📊 FRONTEND OFFLINE MODE: Using static historical data because sensors are offline.');
               // Offline Mode: Using static historical data because sensors are offline
               const fallbackResponse = await fetch('/data/historical_sensor_data.json');
+              console.log('🔄 Fallback JSON Response:', fallbackResponse.status, fallbackResponse.statusText);
+              
               if (fallbackResponse.ok) {
                 const fallbackData = await fallbackResponse.json();
+                console.log('📊 Fallback JSON Data:', {
+                  length: fallbackData.length,
+                  sample: fallbackData.slice(0, 2)
+                });
+                
                 const convertedData: HistoricalDataPoint[] = fallbackData.map((item: any) => ({
                   timestamp: item.timestamp,
                   soil_moisture: item.soil_moisture,
@@ -120,6 +137,8 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
                   humidity_range: [Math.min(...convertedData.map(d => d.humidity)), Math.max(...convertedData.map(d => d.humidity))]
                 });
                 return; // Exit early with mock data
+              } else {
+                console.error('❌ Failed to load fallback JSON:', fallbackResponse.status);
               }
             }
             
@@ -132,6 +151,35 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
               humidity_range: [Math.min(...data.map(d => d.humidity)), Math.max(...data.map(d => d.humidity))]
             });
             return;
+          }
+        } catch (csvError) {
+          console.error('❌ Error loading primary CSV:', csvError);
+        }
+        
+        // 🌐 VERCEL FALLBACK: If we're on Vercel and CSV failed, try fallback immediately
+        if (typeof window !== 'undefined' && window.location.hostname.includes('vercel')) {
+          console.log('🌐 Detected Vercel deployment - trying fallback JSON directly');
+          try {
+            const fallbackResponse = await fetch('/data/historical_sensor_data.json');
+            if (fallbackResponse.ok) {
+              const fallbackData = await fallbackResponse.json();
+              const convertedData: HistoricalDataPoint[] = fallbackData.map((item: any) => ({
+                timestamp: item.timestamp,
+                soil_moisture: item.soil_moisture,
+                temperature: item.temperature,
+                humidity: item.humidity,
+                rain_pct: 0,
+                light_pct: 50,
+                flow: item.soil_moisture < 30 ? 1.5 : 0,
+                pump_status: item.soil_moisture < 30
+              }));
+              
+              setHistoricalData(convertedData);
+              console.log('✅ Vercel fallback data loaded:', convertedData.length, 'points');
+              return;
+            }
+          } catch (vercelError) {
+            console.error('❌ Vercel fallback failed:', vercelError);
           }
         }
         
