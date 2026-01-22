@@ -52,6 +52,15 @@ except ImportError as e:
     logger.error(f"Failed to import chat_router: {e}")
     chat_router = None
 
+# Import 5-minute Telegram updates system
+telegram_5min_system = None
+try:
+    import telegram_5min_updates
+    logger.info("Successfully imported telegram_5min_updates")
+except ImportError as e:
+    logger.error(f"Failed to import telegram_5min_updates: {e}")
+    telegram_5min_updates = None
+
 # Environment variables validation
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
@@ -297,6 +306,11 @@ async def create_sensor_data(data: SensorDataModel, user: dict = Depends(get_cur
     global latest_sensor_data
     
     try:
+        # Update ESP32 heartbeat for 5-minute updates
+        if telegram_5min_updates:
+            telegram_5min_updates.register_esp32_data_received()
+            logger.info("ESP32 heartbeat registered for 5-min updates")
+        
         # Update global state for Telegram bot
         latest_sensor_data = {
             "soil_moisture": data.soil_moisture,
@@ -616,6 +630,11 @@ async def websocket_endpoint(websocket: WebSocket):
                     # Handle sensor data from ESP32
                     logger.info(f"Received sensor data: {message}")
                     
+                    # Register ESP32 heartbeat for 5-minute updates
+                    if telegram_5min_updates:
+                        telegram_5min_updates.register_esp32_data_received()
+                        logger.info("ESP32 heartbeat registered via WebSocket")
+                    
                     # Store latest data
                     manager.latest_data = message
                     
@@ -685,6 +704,28 @@ async def pump_off():
     except Exception as e:
         logger.error(f"Error turning pump OFF: {e}")
         raise HTTPException(status_code=500, detail="Failed to turn pump OFF")
+
+@app.get("/api/esp32-status")
+async def get_esp32_status():
+    """Get ESP32 online status for debugging"""
+    try:
+        if telegram_5min_updates:
+            status_info = telegram_5min_updates.get_esp32_status_info()
+            return {
+                "esp32_online": status_info["online"],
+                "last_seen": status_info["last_seen"],
+                "last_timestamp": status_info["last_timestamp"].isoformat() if status_info["last_timestamp"] else None,
+                "threshold_seconds": 120,
+                "current_time": datetime.utcnow().isoformat()
+            }
+        else:
+            return {
+                "error": "5-minute update system not available",
+                "esp32_online": False
+            }
+    except Exception as e:
+        logger.error(f"Error getting ESP32 status: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get ESP32 status")
 
 # Irrigation events endpoints
 @app.get("/irrigation-events")
@@ -805,6 +846,26 @@ async def startup_event():
     except Exception as e:
         logger.error(f"⚠️ Weather email service error: {e}")
         logger.info("⚠️ Main application continues without weather emails")
+    
+    # Start 5-Minute Telegram Updates System
+    try:
+        if telegram_5min_updates:
+            logger.info("🚀 Starting 5-Minute Telegram Update System...")
+            telegram_5min_scheduler = telegram_5min_updates.start_5min_telegram_updates()
+            
+            if telegram_5min_scheduler:
+                logger.info("✅ 5-Minute Telegram Updates started successfully")
+                logger.info("📱 Updates every 5 minutes with real data only")
+                logger.info("📡 ESP32 online tracking: 120 second threshold")
+                logger.info("🌤️ Weather from OpenWeather API")
+            else:
+                logger.warning("⚠️ 5-Minute Telegram Updates failed to start")
+        else:
+            logger.warning("⚠️ 5-Minute Telegram Updates module not available")
+            
+    except Exception as e:
+        logger.error(f"⚠️ 5-Minute Telegram Updates error: {e}")
+        logger.info("⚠️ Main application continues without 5-min updates")
     
     # Update system status
     try:
