@@ -247,14 +247,20 @@ def has_meaningful_sensor_data(data: List[Dict[str, Any]]) -> bool:
     if not data:
         return False
     
-    # Check if recent data has non-zero values
+    # Check if recent data has non-zero values - CRITICAL FIX
     recent_data = data[:10] if len(data) >= 10 else data
     for record in recent_data:
-        if (record.get('soil_moisture', 0) > 0 or 
-            record.get('temperature', 0) > 0 or 
-            record.get('humidity', 0) > 0):
+        # If ANY sensor has meaningful values, consider it live data
+        soil = record.get('soil_moisture', 0)
+        temp = record.get('temperature', 0) 
+        humidity = record.get('humidity', 0)
+        
+        # FIXED: Check for meaningful ranges, not just > 0
+        if (soil > 5 or temp > 15 or humidity > 30):  # Realistic minimums
             return True
     
+    # If all values are 0 or unrealistically low, trigger fallback
+    logger.info("OFFLINE MODE ACTIVE: All sensor values are zero/unrealistic - serving historical dataset")
     return False
 
 # WebSocket connection manager
@@ -786,6 +792,36 @@ async def get_esp32_status():
     except Exception as e:
         logger.error(f"Error getting ESP32 status: {e}")
         raise HTTPException(status_code=500, detail="Failed to get ESP32 status")
+
+@app.get("/api/test-fallback")
+async def test_fallback():
+    """Test the historical data fallback system"""
+    try:
+        # Get current sensor data
+        result = supabase.table('sensor_data')\
+            .select('*')\
+            .order('timestamp', desc=True)\
+            .limit(10)\
+            .execute()
+        
+        # Check if fallback should trigger
+        has_meaningful = has_meaningful_sensor_data(result.data)
+        
+        # Load historical data
+        historical_data = load_historical_sensor_data()
+        
+        return {
+            "current_data_count": len(result.data) if result.data else 0,
+            "has_meaningful_data": has_meaningful,
+            "historical_data_count": len(historical_data),
+            "fallback_triggered": not has_meaningful,
+            "sample_current": result.data[:3] if result.data else [],
+            "sample_historical": historical_data[:3] if historical_data else [],
+            "message": "OFFLINE MODE ACTIVE: serving historical dataset" if not has_meaningful else "Using live sensor data"
+        }
+    except Exception as e:
+        logger.error(f"Error testing fallback: {e}")
+        raise HTTPException(status_code=500, detail="Failed to test fallback")
 
 # Irrigation events endpoints
 @app.get("/irrigation-events")
