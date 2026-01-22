@@ -8,8 +8,6 @@ import os
 import asyncio
 import smtplib
 import aiohttp
-import schedule
-import time
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -17,6 +15,9 @@ from typing import Dict, List, Optional
 import json
 import threading
 from pathlib import Path
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
 
 # Load environment variables from .env file for local development
 try:
@@ -38,6 +39,9 @@ class DailyWeatherEmailService:
         self.email_user = os.getenv("EMAIL_USER")
         self.email_pass = os.getenv("EMAIL_PASS")
         self.recipients = os.getenv("EMAIL_RECIPIENTS", "").split(",") if os.getenv("EMAIL_RECIPIENTS") else []
+        
+        # Initialize scheduler
+        self.scheduler = AsyncIOScheduler(timezone=pytz.timezone('Asia/Kolkata'))
         
         # Validate required environment variables
         if not all([self.api_key, self.email_user, self.email_pass, self.recipients]):
@@ -512,31 +516,44 @@ class DailyWeatherEmailService:
             # Don't raise error to prevent affecting main application
 
     def schedule_daily_email(self):
-        """Schedule daily emails at 6:00 AM and 7:00 PM IST"""
+        """Schedule daily emails at 6:00 AM and 7:00 PM IST using APScheduler"""
         print("⏰ Daily Weather Email Service: Scheduling daily emails at 6:00 AM and 7:00 PM IST")
         
         # Schedule morning email at 6:00 AM IST
-        schedule.every().day.at("06:00").do(
-            lambda: asyncio.run(self.send_daily_weather_email("morning"))
+        self.scheduler.add_job(
+            func=self.send_daily_weather_email,
+            trigger=CronTrigger(hour=6, minute=0, timezone=pytz.timezone('Asia/Kolkata')),
+            args=['morning'],
+            id='morning_weather_email',
+            replace_existing=True
         )
         
         # Schedule evening email at 7:00 PM IST (19:00)
-        schedule.every().day.at("19:00").do(
-            lambda: asyncio.run(self.send_daily_weather_email("evening"))
+        self.scheduler.add_job(
+            func=self.send_daily_weather_email,
+            trigger=CronTrigger(hour=19, minute=0, timezone=pytz.timezone('Asia/Kolkata')),
+            args=['evening'],
+            id='evening_weather_email',
+            replace_existing=True
         )
         
         print("✅ Daily Weather Email Service: Morning (6:00 AM) and Evening (7:00 PM) schedules configured")
 
-    def run_scheduler(self):
-        """Run the scheduler in a separate thread"""
-        def scheduler_thread():
-            while True:
-                schedule.run_pending()
-                time.sleep(60)  # Check every minute
-        
-        thread = threading.Thread(target=scheduler_thread, daemon=True)
-        thread.start()
-        print("✅ Daily Weather Email Service: Scheduler thread started")
+    def start_scheduler(self):
+        """Start the APScheduler"""
+        try:
+            self.scheduler.start()
+            print("✅ Daily Weather Email Service: APScheduler started successfully")
+        except Exception as e:
+            print(f"❌ Daily Weather Email Service: Failed to start scheduler: {e}")
+
+    def stop_scheduler(self):
+        """Stop the APScheduler"""
+        try:
+            self.scheduler.shutdown()
+            print("✅ Daily Weather Email Service: APScheduler stopped")
+        except Exception as e:
+            print(f"❌ Daily Weather Email Service: Failed to stop scheduler: {e}")
 
     async def send_test_email(self, time_of_day: str = "morning"):
         """Send a test email immediately"""
@@ -548,7 +565,7 @@ class DailyWeatherEmailService:
         try:
             print("🚀 Daily Weather Email Service (Python): Initializing...")
             self.schedule_daily_email()
-            self.run_scheduler()
+            self.start_scheduler()
             print("✅ Daily Weather Email Service (Python): Initialized successfully")
             print("📧 Email service configured via environment variables")
             print("⏰ Schedule: 6:00 AM and 7:00 PM IST daily")
@@ -582,7 +599,10 @@ if __name__ == "__main__":
     if service:
         # Keep the script running
         try:
-            while True:
-                time.sleep(1)
+            import asyncio
+            loop = asyncio.get_event_loop()
+            loop.run_forever()
         except KeyboardInterrupt:
             print("\n👋 Daily Weather Email Service stopped")
+            if service.scheduler.running:
+                service.stop_scheduler()
