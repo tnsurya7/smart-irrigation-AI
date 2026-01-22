@@ -1,7 +1,7 @@
 """
 OpenRouter ChatGPT-4o Chatbot Router
-Integrated chatbot for Smart Agriculture Dashboard
-Works with Web Dashboard, Mobile App, and Telegram Bot
+Smart Agriculture Dashboard with intelligent query classification
+Reduces API costs by using rule-based responses for weather/irrigation
 """
 
 import os
@@ -35,93 +35,27 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
 
-def call_openrouter(messages: list, model: str = "openai/chatgpt-4o-latest") -> str:
-    """Call OpenRouter API with ChatGPT-4o"""
-    if not OPENROUTER_API_KEY:
-        raise HTTPException(status_code=500, detail="OpenRouter API key not configured")
+def classify_query(text: str) -> str:
+    """Classify user query to reduce API costs"""
+    t = text.lower()
     
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://smart-agriculture-dashboard.vercel.app",
-        "X-Title": "Smart Agriculture Chatbot"
-    }
+    # Weather queries (NO AI needed)
+    weather_keywords = ["weather", "mala", "rain", "varuma", "temperature", "temp", "climate", "hot", "cold", "sunny", "cloudy", "mausam"]
+    if any(w in t for w in weather_keywords):
+        return "weather"
     
-    payload = {
-        "model": model,
-        "messages": messages,
-        "temperature": 0.7,
-        "max_tokens": 500
-    }
+    # Irrigation queries (Rule-based, NO AI needed)
+    irrigation_keywords = ["irrigation", "watering", "paani", "neer", "water", "pump", "spray"]
+    if any(w in t for w in irrigation_keywords):
+        return "irrigation"
     
-    try:
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        response.raise_for_status()
-        
-        data = response.json()
-        return data["choices"][0]["message"]["content"].strip()
-        
-    except requests.exceptions.RequestException as e:
-        logger.error(f"OpenRouter API error: {e}")
-        raise HTTPException(status_code=500, detail="Chatbot service temporarily unavailable")
-    except (KeyError, IndexError) as e:
-        logger.error(f"OpenRouter response parsing error: {e}")
-        raise HTTPException(status_code=500, detail="Invalid response from chatbot service")
+    # Everything else uses AI (controlled usage)
+    return "ai"
 
-def detect_intent(user_message: str) -> Dict[str, Any]:
-    """Step 1: Detect user intent using ChatGPT-4o"""
-    
-    intent_prompt = f"""
-Analyze this user message and detect the intent. Return ONLY valid JSON.
-
-User message: "{user_message}"
-
-Return JSON format:
-{{
-    "intent": "weather" or "chat",
-    "city": "city name if weather intent, null otherwise"
-}}
-
-Rules:
-- If user asks about weather, temperature, rain, humidity, irrigation, farming conditions: intent = "weather"
-- Extract city name if mentioned, default to "Erode" if weather intent but no city specified
-- For all other messages: intent = "chat"
-- Return ONLY the JSON, no other text
-"""
-
-    messages = [{"role": "user", "content": intent_prompt}]
-    
-    try:
-        response = call_openrouter(messages)
-        # Clean response and parse JSON
-        response = response.strip()
-        if response.startswith("```json"):
-            response = response.replace("```json", "").replace("```", "").strip()
-        
-        intent_data = json.loads(response)
-        return intent_data
-        
-    except json.JSONDecodeError:
-        logger.warning(f"Failed to parse intent JSON: {response}")
-        # Fallback: simple keyword detection
-        weather_keywords = ["weather", "temperature", "rain", "humidity", "irrigation", "farming", "climate", "forecast"]
-        if any(keyword in user_message.lower() for keyword in weather_keywords):
-            return {"intent": "weather", "city": "Erode"}
-        else:
-            return {"intent": "chat", "city": None}
-    except Exception as e:
-        logger.error(f"Intent detection error: {e}")
-        return {"intent": "chat", "city": None}
-
-def get_weather_data(city: str) -> Dict[str, Any]:
+def get_weather_data(city: str = "Erode") -> Dict[str, Any]:
     """Get weather data from OpenWeather API"""
     if not OPENWEATHER_API_KEY:
-        raise HTTPException(status_code=500, detail="Weather API key not configured")
+        raise Exception("Weather API key not configured")
     
     try:
         # Current weather
@@ -151,68 +85,109 @@ def get_weather_data(city: str) -> Dict[str, Any]:
             "wind_speed": current_data.get('wind', {}).get('speed', 0)
         }
         
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         logger.error(f"Weather API error: {e}")
-        raise HTTPException(status_code=500, detail="Weather service temporarily unavailable")
-    except KeyError as e:
-        logger.error(f"Weather data parsing error: {e}")
-        raise HTTPException(status_code=404, detail=f"Weather data not found for {city}")
+        raise Exception("Weather service temporarily unavailable")
 
-def generate_weather_response(user_message: str, weather_data: Dict[str, Any]) -> str:
-    """Step 2: Generate farmer-friendly weather response"""
+def format_weather_response(weather_data: Dict[str, Any], user_message: str) -> str:
+    """Format weather response in appropriate language"""
+    temp = weather_data['temperature']
+    humidity = weather_data['humidity']
+    rain_prob = weather_data['rain_probability']
+    condition = weather_data['condition']
+    city = weather_data['city']
     
-    weather_prompt = f"""
-You are a helpful farming assistant. A farmer asked: "{user_message}"
+    # Detect language from user message
+    if any(word in user_message.lower() for word in ['mala', 'varuma', 'iniku', 'nalla']):
+        # Tamil/Tanglish
+        return f"🌤️ {city}-la iniku weather: {temp}°C, {condition}. 💧 Humidity {humidity}%, 🌧️ Rain chance {rain_prob}%. {'💧 Irrigation pannalam!' if rain_prob < 30 else '🌧️ Rain varalam, irrigation vendam!'} Let me know if you need more help 🙂"
+    else:
+        # English
+        return f"🌤️ {city} weather today: {temp}°C, {condition}. 💧 Humidity {humidity}%, 🌧️ Rain chance {rain_prob}%. {'💧 Good for irrigation!' if rain_prob < 30 else '🌧️ Rain expected, avoid irrigation!'} Let me know if you need more help 🙂"
 
-Current weather data for {weather_data['city']}:
-- Temperature: {weather_data['temperature']}°C (feels like {weather_data['feels_like']}°C)
-- Humidity: {weather_data['humidity']}%
-- Condition: {weather_data['condition']}
-- Rain probability: {weather_data['rain_probability']}%
-- Wind speed: {weather_data['wind_speed']} m/s
+def get_irrigation_advice(user_message: str) -> str:
+    """Rule-based irrigation advice (NO AI cost)"""
+    try:
+        # Get current weather for irrigation decision
+        weather = get_weather_data()
+        rain_prob = weather['rain_probability']
+        
+        # Detect language
+        if any(word in user_message.lower() for word in ['paani', 'neer', 'irrigation']):
+            if rain_prob > 40:
+                return "🌧️ Rain expected today. Avoid irrigation to prevent waterlogging. Check again tomorrow! Let me know if you need more help 🙂"
+            else:
+                return "💧 Good time for irrigation! Water early morning (6-8 AM) or evening (6-8 PM) for best results. Let me know if you need more help 🙂"
+        else:
+            if rain_prob > 40:
+                return "🌧️ மழை வரும், இன்று நீர்ப்பாசனம் வேண்டாம். நாளை பார்க்கலாம்! மேலும் உதவி வேண்டுமா 🙂"
+            else:
+                return "💧 நீர்ப்பாசனம் செய்யலாம்! காலை 6-8 மணி அல்லது மாலை 6-8 மணிக்கு தண்ணீர் கொடுங்கள். மேலும் உதவி வேண்டுமா 🙂"
+                
+    except Exception:
+        return "💧 For irrigation advice, check weather conditions first. Water early morning or evening for best results. Let me know if you need more help 🙂"
 
-Generate a farmer-friendly response that:
-1. Answers their weather question in simple language
-2. Uses appropriate emojis (🌡️🌧️🌱💧☀️🌤️)
-3. Includes practical irrigation/farming advice
-4. Responds in the same language as the user's question
-5. Keep it concise (2-3 sentences max)
-6. NO JSON in the response, just natural text
-
-Example format:
-"🌡️ Current temperature in [city] is [temp]°C with [condition]. 💧 Humidity is [humidity]% and rain chance is [rain]%. 🌱 [Irrigation advice based on conditions]."
-"""
-
-    messages = [{"role": "user", "content": weather_prompt}]
-    return call_openrouter(messages)
-
-def generate_chat_response(user_message: str) -> str:
-    """Step 3: Generate normal chat response"""
+def call_openrouter_safe(user_message: str) -> str:
+    """Call OpenRouter with cost protection and limits"""
+    if not OPENROUTER_API_KEY:
+        return "🤖 AI service not configured. I can still help with weather and irrigation questions! Let me know if you need more help 🙂"
     
-    chat_prompt = f"""
-You are a helpful farming and agriculture assistant chatbot for a Smart Agriculture Dashboard.
-
-User message: "{user_message}"
-
-Respond helpfully in:
-- Simple, clear language
-- Same language as the user's message
-- Friendly, supportive tone
-- Focus on farming/agriculture topics when relevant
-- Keep responses concise (2-3 sentences)
-- Use emojis when appropriate 🌱🚜👨‍🌾
-
-If the question is not about farming, still be helpful but try to relate it back to agriculture when possible.
-"""
-
-    messages = [{"role": "user", "content": chat_prompt}]
-    return call_openrouter(messages)
+    # Hard limits to prevent cost overrun
+    if len(user_message) > 300:
+        return "Please ask in shorter sentences for better help. Let me know if you need more help 🙂"
+    
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://smart-agriculture-dashboard.vercel.app",
+        "X-Title": "Smart Agriculture Chatbot"
+    }
+    
+    # Cost-controlled payload
+    payload = {
+        "model": "openai/gpt-4o-mini",  # Cheaper model
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a helpful farming assistant. Answer briefly in 2 lines max. Use emojis. Be friendly."
+            },
+            {
+                "role": "user",
+                "content": user_message[:200]  # Hard cut input
+            }
+        ],
+        "max_tokens": 80,  # Hard limit
+        "temperature": 0.3,
+        "top_p": 0.9
+    }
+    
+    try:
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=15
+        )
+        
+        if response.status_code == 402:
+            return "🤖 AI service needs credits. I can still help with weather and irrigation questions! Let me know if you need more help 🙂"
+        
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"].strip()
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"OpenRouter API error: {e}")
+        return "🤖 AI service temporarily busy. I can help with weather and irrigation questions! Let me know if you need more help 🙂"
+    except Exception as e:
+        logger.error(f"OpenRouter response error: {e}")
+        return "🤖 Having technical difficulties. Try asking about weather or irrigation! Let me know if you need more help 🙂"
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     """
-    Main chatbot endpoint for Smart Agriculture Dashboard
-    Works with Web Dashboard, Mobile App, and Telegram Bot
+    Smart Agriculture Chatbot with intelligent query classification
+    Reduces API costs by using rule-based responses for weather/irrigation
     """
     try:
         user_message = request.message.strip()
@@ -222,36 +197,36 @@ async def chat_endpoint(request: ChatRequest):
         
         logger.info(f"Chat request: {user_message}")
         
-        # Step 1: Detect Intent
-        intent_data = detect_intent(user_message)
-        intent = intent_data.get("intent", "chat")
-        city = intent_data.get("city", "Erode")
+        # Step 1: Classify Query (NO API cost)
+        query_type = classify_query(user_message)
+        logger.info(f"Query classified as: {query_type}")
         
-        logger.info(f"Detected intent: {intent}, city: {city}")
-        
-        # Step 2: Handle Weather Intent
-        if intent == "weather":
+        # Step 2: Handle Weather Queries (NO AI cost)
+        if query_type == "weather":
             try:
-                weather_data = get_weather_data(city)
-                reply = generate_weather_response(user_message, weather_data)
-            except HTTPException as e:
-                if e.status_code == 404:
-                    reply = f"🌍 Sorry, I couldn't find weather data for {city}. Please check the city name and try again."
-                else:
-                    reply = "🌤️ Weather service is temporarily unavailable. Please try again in a moment."
+                weather_data = get_weather_data("Erode")
+                reply = format_weather_response(weather_data, user_message)
+                logger.info("Weather response generated (cost: ₹0.00)")
+                return ChatResponse(reply=reply)
+            except Exception as e:
+                logger.error(f"Weather service error: {e}")
+                return ChatResponse(reply="🌤️ Weather service temporarily unavailable. Please try again in a moment. Let me know if you need more help 🙂")
         
-        # Step 3: Handle Normal Chat
+        # Step 3: Handle Irrigation Queries (Rule-based, NO AI cost)
+        elif query_type == "irrigation":
+            reply = get_irrigation_advice(user_message)
+            logger.info("Irrigation advice generated (cost: ₹0.00)")
+            return ChatResponse(reply=reply)
+        
+        # Step 4: Handle AI Queries (Controlled cost)
         else:
-            reply = generate_chat_response(user_message)
+            reply = call_openrouter_safe(user_message)
+            logger.info("AI response generated (controlled cost)")
+            return ChatResponse(reply=reply)
         
-        logger.info(f"Chat response generated successfully")
-        return ChatResponse(reply=reply)
-        
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Chat endpoint error: {e}")
-        return ChatResponse(reply="🤖 I'm having some technical difficulties right now. Please try again in a moment.")
+        return ChatResponse(reply="🤖 I'm having some technical difficulties right now. I can help with weather and irrigation questions! Let me know if you need more help 🙂")
 
 @router.get("/chat/health")
 async def chat_health():

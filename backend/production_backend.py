@@ -790,13 +790,21 @@ async def startup_event():
         parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         sys.path.insert(0, parent_dir)
         
-        import auto_start_weather_emails
-        logger.info("✅ Daily Weather Email Service integrated successfully")
-        logger.info("📧 Email service configured via environment variables")
-        logger.info("⏰ Schedule: 6:00 AM and 7:00 PM IST daily")
+        from daily_weather_email_service import initialize_daily_weather_email
+        
+        logger.info("🌱 Starting Daily Weather Email Service...")
+        service = initialize_daily_weather_email()
+        
+        if service:
+            logger.info("✅ Daily Weather Email Service started successfully")
+            logger.info("📧 Email service configured via environment variables")
+            logger.info("⏰ Schedule: 6:00 AM and 7:00 PM IST daily")
+        else:
+            logger.warning("⚠️ Daily Weather Email Service failed to start")
+            
     except Exception as e:
-        logger.error(f"⚠️ Weather email service not available: {e}")
-        logger.info("⚠️ Main application continues normally")
+        logger.error(f"⚠️ Weather email service error: {e}")
+        logger.info("⚠️ Main application continues without weather emails")
     
     # Update system status
     try:
@@ -841,18 +849,4 @@ if __name__ == "__main__":
         log_level="info"
     )
 
-# Auto-start Daily Weather Email Service
-# Configured via environment variables for security
-# Sends daily weather emails at 6:00 AM and 7:00 PM IST
-try:
-    import sys
-    import os
-    # Add parent directory to path to import weather email service
-    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sys.path.insert(0, parent_dir)
-    
-    import auto_start_weather_emails
-    logger.info("✅ Daily Weather Email Service integrated successfully")
-except Exception as e:
-    logger.error(f"⚠️ Weather email service not available: {e}")
-    logger.info("⚠️ Main application continues normally")
+# Auto-start completed in startup event above
