@@ -228,15 +228,6 @@ export const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
         
         botReply = fallbackResponses[language as keyof typeof fallbackResponses] || fallbackResponses.english;
       }
-              english: 'I can help with agriculture questions. Ask about weather, irrigation, or crop growing. Let me know if you need more help 🙂'
-            };
-            botReply = generalResponses[language as keyof typeof generalResponses] || generalResponses.english;
-          }
-        } catch (localError) {
-          console.error("Local backend failed:", localError);
-          botReply = getFallbackResponse(language);
-        }
-      }
       
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
