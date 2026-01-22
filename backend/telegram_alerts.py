@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 # Configuration
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "***REMOVED***")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "5707565347")
 TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 # Alert thresholds

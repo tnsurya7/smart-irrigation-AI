@@ -42,7 +42,7 @@ After deployment completes, you should see in logs:
 ### Email Schedule
 - **Morning**: 6:00 AM IST daily
 - **Evening**: 7:00 PM IST daily
-- **Recipients**: ***REMOVED***, ***REMOVED***
+- **Recipients**: suryakumar56394@gmail.com, monikam11g1@gmail.com
 
 ### Email Content
 - Weather data for Erode, Tamil Nadu

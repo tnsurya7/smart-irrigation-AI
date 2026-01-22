@@ -20,7 +20,7 @@ You'll see this welcome message:
 
 🤖 Connected to: https://smart-agriculture-backend-my7c.onrender.com
 🌍 Weather Location: Erode
-📱 Chat ID: ***REMOVED***
+📱 Chat ID: 5707565347
 
 Available Commands:
 • Control pump remotely
@@ -286,7 +286,7 @@ Your bot is working correctly when:
 **🌱 Your Smart Agriculture Telegram Bot is ready for production use!**
 
 **Bot Username:** @Arimax_Alert_Bot  
-**Your Chat ID:** ***REMOVED***  
+**Your Chat ID:** 5707565347  
 **Backend:** https://smart-agriculture-backend-my7c.onrender.com  
 
 **Start chatting with your bot now!** 🤖

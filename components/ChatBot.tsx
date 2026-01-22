@@ -188,98 +188,46 @@ export const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
 
       // Try N8N webhook first, fallback to clean weather responses
       let botReply = '';
-      let useLocalBackend = false;
       
       try {
-        const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || "https://suryan8nproject.app.n8n.cloud/webhook/ccd37962-6bb3-4c30-b859-d3b63b9c64e2/chat";
+        // Use production backend with OpenRouter ChatGPT-4o integration
+        const apiUrl = "https://smart-agriculture-backend-my7c.onrender.com";
+        console.log("🤖 Sending message to production backend:", currentMessage);
         
-        // Create timeout promise for better browser compatibility
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('N8N request timeout')), 3000) // Reduced to 3 seconds
-        );
-        
-        const fetchPromise = fetch(webhookUrl, {
+        const response = await fetch(`${apiUrl}/api/chat`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept": "application/json"
           },
           body: JSON.stringify({
-            sessionId: "agri-dashboard",
-            action: "sendMessage",
-            chatInput: currentMessage,
-            language: language
+            message: currentMessage
           })
         });
-        
-        const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
 
         if (!response.ok) {
-          throw new Error(`N8N HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(`Backend HTTP ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log("N8N RAW RESPONSE:", data);
+        console.log("✅ Backend response received:", data);
         
-        if (data.output) {
-          botReply = data.output;
-        } else if (data.coord && data.main && data.weather) {
-          botReply = processWeatherData(data, language, currentMessage);
+        if (data.reply) {
+          botReply = data.reply;
         } else {
-          throw new Error("Invalid N8N response format");
+          throw new Error("Invalid backend response format");
         }
-      } catch (n8nError) {
-        console.log("N8N failed, using clean weather fallback:", n8nError);
-        useLocalBackend = true;
+      } catch (backendError) {
+        console.error("Production backend failed:", backendError);
+        // Fallback to generic helpful response
+        const fallbackResponses = {
+          tamil: 'வேளாண்மை குறித்த கேள்விகளுக்கு உதவ தயாராக இருக்கிறேன். வானிலை, நீர்ப்பாசனம், பயிர் வளர்ப்பு பற்றி கேளுங்கள். மேலும் உதவி வேண்டுமா 🙂',
+          tanglish: 'Agriculture questions ku help pannalam. Weather, irrigation, crop growing pathi kelunga. Let me know if you need more help 🙂',
+          english: 'I can help with agriculture questions. Ask about weather, irrigation, or crop growing. Let me know if you need more help 🙂'
+        };
+        
+        botReply = fallbackResponses[language as keyof typeof fallbackResponses] || fallbackResponses.english;
       }
-
-      // Fallback to clean weather responses using local API
-      if (useLocalBackend) {
-      
-      try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
-        console.log("Using local backend:", apiUrl);
-          
-          // Check if it's a weather query
-          const isWeatherQuery = /weather|mala|rain|varuma|temperature|temp|climate|hot|cold|sunny|cloudy|irrigation.*advice/i.test(currentMessage);
-          console.log("Is weather query:", isWeatherQuery, "for message:", currentMessage);
-          
-          if (isWeatherQuery) {
-            console.log("Fetching weather from:", `${apiUrl}/weather`);
-            const weatherResponse = await fetch(`${apiUrl}/weather`, {
-              method: "GET",
-              headers: { "Content-Type": "application/json" }
-            });
-            
-            console.log("Weather response status:", weatherResponse.status);
-            
-            if (weatherResponse.ok) {
-              const weatherData = await weatherResponse.json();
-              console.log("Weather data received:", weatherData);
-              
-              botReply = (() => {
-                const temp = Math.round(weatherData.temperature);
-                const humidity = weatherData.humidity;
-                const rainProb = Math.round(weatherData.rain_probability);
-                const location = weatherData.location;
-                
-                // Simple, clean responses as requested
-                if (language === 'tamil') {
-                  return `${location}-la iniku weather: 🌡️ ${temp}°C, 💧 ${humidity}% 🌧️ மழை வாய்ப்பு: ${rainProb}% நீர்ப்பாசனம் செய்யலாம். மேலும் உதவி வேண்டுமா 🙂`;
-                } else if (language === 'tanglish') {
-                  return `${location}-la iniku weather: 🌡️ ${temp}°C, 💧 ${humidity}% 🌧️ Rain chance: ${rainProb}% Irrigation pannalam. Let me know if you need more help 🙂`;
-                } else {
-                  return `${location} weather today: 🌡️ ${temp}°C, 💧 ${humidity}% 🌧️ Rain chance: ${rainProb}% Irrigation recommended. Let me know if you need more help 🙂`;
-                }
-              })();
-            } else {
-              console.error("Weather API failed with status:", weatherResponse.status);
-              throw new Error(`Weather API failed: ${weatherResponse.status}`);
-            }
-          } else {
-            // For non-weather queries, provide general agricultural advice
-            const generalResponses = {
-              tamil: 'வேளாண்மை குறித்த கேள்விகளுக்கு உதவ தயாராக இருக்கிறேன். வானிலை, நீர்ப்பாசனம், பயிர் வளர்ப்பு பற்றி கேளுங்கள். மேலும் உதவி வேண்டுமா 🙂',
-              tanglish: 'Agriculture questions ku help pannalam. Weather, irrigation, crop growing pathi kelunga. Let me know if you need more help 🙂',
               english: 'I can help with agriculture questions. Ask about weather, irrigation, or crop growing. Let me know if you need more help 🙂'
             };
             botReply = generalResponses[language as keyof typeof generalResponses] || generalResponses.english;
