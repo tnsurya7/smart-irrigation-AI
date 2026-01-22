@@ -27,39 +27,13 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load historical data from backend API with fallback support
+  // Load historical data with CSV as primary source for immediate display
   useEffect(() => {
     const loadHistoricalData = async () => {
       try {
         setLoading(true);
         
-        // Try to get data from backend API (which has historical fallback)
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://smart-agriculture-backend-my7c.onrender.com';
-        const response = await fetch(`${API_BASE_URL}/sensor-data/latest?limit=100`);
-        
-        if (response.ok) {
-          const result = await response.json();
-          
-          if (result.data && result.data.length > 0) {
-            // Convert backend data format to component format
-            const data: HistoricalDataPoint[] = result.data.map((item: any) => ({
-              timestamp: item.timestamp,
-              soil_moisture: item.soil_moisture || 0,
-              temperature: item.temperature || 0,
-              humidity: item.humidity || 0,
-              rain_pct: item.rain_raw ? (item.rain_raw / 4095) * 100 : 0, // Convert raw to percentage
-              light_pct: item.light_percent || 0,
-              flow: item.flow_rate || 0,
-              pump_status: item.pump_status === 1
-            }));
-            
-            setHistoricalData(data);
-            console.log('✅ Historical data loaded from backend API:', data.length, 'points');
-            return;
-          }
-        }
-        
-        // Fallback: Try to load from CSV file
+        // Primary: Load from CSV file (most reliable for frontend)
         const csvResponse = await fetch('/arimax_real_sensor_data.csv');
         
         if (csvResponse.ok) {
@@ -91,9 +65,78 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
               });
             
             setHistoricalData(data);
-            console.log('✅ Historical data loaded from CSV fallback:', data.length, 'points');
+            console.log('✅ Historical data loaded from CSV:', data.length, 'points');
+            console.log('📊 Data sample:', {
+              soil_range: [Math.min(...data.map(d => d.soil_moisture)), Math.max(...data.map(d => d.soil_moisture))],
+              temp_range: [Math.min(...data.map(d => d.temperature)), Math.max(...data.map(d => d.temperature))],
+              humidity_range: [Math.min(...data.map(d => d.humidity)), Math.max(...data.map(d => d.humidity))]
+            });
             return;
           }
+        }
+        
+        // Fallback: Try soil_moisture_training.csv
+        const soilCsvResponse = await fetch('/soil_moisture_training.csv');
+        
+        if (soilCsvResponse.ok) {
+          const csvText = await soilCsvResponse.text();
+          const lines = csvText.trim().split('\n');
+          
+          if (lines.length >= 2) {
+            const dataLines = lines.slice(1);
+            const step = Math.max(1, Math.floor(dataLines.length / 100));
+            
+            const data: HistoricalDataPoint[] = dataLines
+              .filter((_, index) => index % step === 0)
+              .slice(0, 100)
+              .map(line => {
+                const values = line.split(',');
+                return {
+                  timestamp: values[0] || new Date().toISOString(),
+                  soil_moisture: parseFloat(values[1]) || 0,
+                  temperature: parseFloat(values[2]) || 0,
+                  humidity: parseFloat(values[3]) || 0,
+                  rain_pct: parseFloat(values[4]) || 0,
+                  light_pct: parseFloat(values[5]) || 0,
+                  flow: parseFloat(values[6]) || 0,
+                  pump_status: parseFloat(values[6]) > 0 // Pump on when flow > 0
+                };
+              });
+            
+            setHistoricalData(data);
+            console.log('✅ Historical data loaded from soil training CSV:', data.length, 'points');
+            return;
+          }
+        }
+        
+        // Secondary: Try backend API (if available)
+        try {
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://smart-agriculture-backend-my7c.onrender.com';
+          const response = await fetch(`${API_BASE_URL}/sensor-data/latest?limit=100`);
+          
+          if (response.ok) {
+            const result = await response.json();
+            
+            if (result.data && result.data.length > 0) {
+              // Convert backend data format to component format
+              const data: HistoricalDataPoint[] = result.data.map((item: any) => ({
+                timestamp: item.timestamp,
+                soil_moisture: item.soil_moisture || 0,
+                temperature: item.temperature || 0,
+                humidity: item.humidity || 0,
+                rain_pct: item.rain_raw ? (item.rain_raw / 4095) * 100 : 0, // Convert raw to percentage
+                light_pct: item.light_percent || 0,
+                flow: item.flow_rate || 0,
+                pump_status: item.pump_status === 1
+              }));
+              
+              setHistoricalData(data);
+              console.log('✅ Historical data loaded from backend API:', data.length, 'points');
+              return;
+            }
+          }
+        } catch (apiError) {
+          console.log('⚠️ Backend API not available, using CSV data');
         }
         
         throw new Error('No data sources available');
