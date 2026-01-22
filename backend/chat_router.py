@@ -44,6 +44,20 @@ def extract_city(user_message: str) -> str:
     """Extract city from user message - India only"""
     message_lower = user_message.lower()
     
+    # 🔧 COUNTRY-LEVEL QUERY HANDLING
+    country_aliases = ['india', 'bharat', 'hindustan']
+    if any(country in message_lower for country in country_aliases):
+        # Check if it's a pure country query (no specific city mentioned)
+        city_mentioned = any(city in message_lower for city in [
+            'erode', 'salem', 'tiruchengode', 'thiruchengode', 'kerala', 
+            'chennai', 'bangalore', 'bengaluru', 'mumbai', 'delhi', 
+            'hyderabad', 'pune', 'coimbatore', 'madurai', 'trichy'
+        ])
+        
+        if not city_mentioned:
+            # Pure country query - use capital city
+            return "New Delhi,IN"
+    
     # Specific city detection
     if "erode" in message_lower:
         return "Erode,IN"
@@ -65,8 +79,14 @@ def extract_city(user_message: str) -> str:
         return "Hyderabad,IN"
     elif "pune" in message_lower:
         return "Pune,IN"
+    elif "coimbatore" in message_lower:
+        return "Coimbatore,IN"
+    elif "madurai" in message_lower:
+        return "Madurai,IN"
+    elif "trichy" in message_lower or "tiruchirappalli" in message_lower:
+        return "Tiruchirappalli,IN"
     else:
-        return "India"  # Default fallback
+        return "Erode,IN"  # Default to Erode instead of "India"
 
 def get_real_weather_data(city: str) -> str:
     """Get REAL weather data from OpenWeather API - NEVER use AI for weather"""
@@ -86,8 +106,13 @@ def get_real_weather_data(city: str) -> str:
         humidity = data["main"]["humidity"]
         description = data["weather"][0]["description"].title()
         
-        # Format real weather response
-        return f"🌤️ Weather in {city_name}\n🌡️ Temperature: {temperature}°C\n💧 Humidity: {humidity}%\n☁️ Condition: {description}"
+        # 🔧 SMART RESPONSE FOR COUNTRY-LEVEL QUERIES
+        if city == "New Delhi,IN":
+            # Check if this was a country-level query by looking at the original request
+            return f"🌤️ Weather in India (New Delhi)\n🌡️ Temperature: {temperature}°C\n💧 Humidity: {humidity}%\n☁️ Condition: {description}\n\n💡 For other cities, ask: 'weather in Chennai' or 'weather in Mumbai'"
+        else:
+            # Regular city response
+            return f"🌤️ Weather in {city_name}\n🌡️ Temperature: {temperature}°C\n💧 Humidity: {humidity}%\n☁️ Condition: {description}"
         
     except requests.exceptions.RequestException as e:
         logger.error(f"OpenWeather API error: {e}")
