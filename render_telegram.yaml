@@ -12,7 +12,7 @@ services:
       - key: TELEGRAM_CHAT_ID
         value: ***REMOVED***
       - key: OPENWEATHER_API_KEY
-        value: ***REMOVED***
+        value: your-openweather-api-key-here
       - key: BACKEND_URL
         value: https://smart-agriculture-backend-my7c.onrender.com
       - key: WEATHER_CITY

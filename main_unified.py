@@ -34,9 +34,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Configuration
-OPENWEATHER_API_KEY = "***REMOVED***"
-TELEGRAM_BOT_TOKEN = "***REMOVED***"
-TELEGRAM_CHAT_ID = "***REMOVED***"
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 CITY = "Erode"
 
 # Global variables

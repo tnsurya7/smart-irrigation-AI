@@ -43,6 +43,15 @@ except ImportError as e:
     logger.error(f"Failed to import telegram_bot router: {e}")
     telegram_router = None
 
+# Import Chat router for OpenRouter ChatGPT-4o integration
+chat_router = None
+try:
+    from chat_router import router as chat_router
+    logger.info("Successfully imported chat_router")
+except ImportError as e:
+    logger.error(f"Failed to import chat_router: {e}")
+    chat_router = None
+
 # Environment variables validation
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
@@ -80,6 +89,13 @@ if telegram_router:
     logger.info("Telegram bot router registered successfully")
 else:
     logger.warning("Telegram bot router not available - skipping registration")
+
+# Include Chat router if available
+if chat_router:
+    app.include_router(chat_router, prefix="/api")
+    logger.info("Chat router registered successfully at /api/chat")
+else:
+    logger.warning("Chat router not available - skipping registration")
 
 # CRITICAL: Render health check bypass at ASGI level - MUST BE FIRST MIDDLEWARE
 @app.middleware("http")

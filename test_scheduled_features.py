@@ -2,14 +2,15 @@
 """
 Test the scheduled Telegram features manually
 """
+import os
 import requests
 import json
 from datetime import datetime
 
 # Configuration
-TELEGRAM_BOT_TOKEN = "***REMOVED***"
-TELEGRAM_CHAT_ID = "***REMOVED***"
-OPENWEATHER_API_KEY = "***REMOVED***"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 CITY = "Erode"
 
 def send_telegram_message(message):

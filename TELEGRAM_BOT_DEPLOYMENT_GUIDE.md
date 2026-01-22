@@ -149,9 +149,9 @@ After sending `/start`, you'll see buttons:
 pip3 install python-telegram-bot requests
 
 # Set environment variables
-export TELEGRAM_BOT_TOKEN="***REMOVED***"
-export TELEGRAM_CHAT_ID="***REMOVED***"
-export OPENWEATHER_API_KEY="***REMOVED***"
+export TELEGRAM_BOT_TOKEN="your-telegram-bot-token-here"
+export TELEGRAM_CHAT_ID="your-telegram-chat-id-here"
+export OPENWEATHER_API_KEY="your-openweather-api-key-here"
 export BACKEND_URL="https://smart-agriculture-backend-my7c.onrender.com"
 
 # Run bot
@@ -172,9 +172,9 @@ echo "worker: python telegram_production.py" > Procfile
 
 # Deploy to Heroku
 heroku create smart-agriculture-bot
-heroku config:set TELEGRAM_BOT_TOKEN="***REMOVED***"
-heroku config:set TELEGRAM_CHAT_ID="***REMOVED***"
-heroku config:set OPENWEATHER_API_KEY="***REMOVED***"
+heroku config:set TELEGRAM_BOT_TOKEN="your-telegram-bot-token-here"
+heroku config:set TELEGRAM_CHAT_ID="your-telegram-chat-id-here"
+heroku config:set OPENWEATHER_API_KEY="your-openweather-api-key-here"
 heroku config:set BACKEND_URL="https://smart-agriculture-backend-my7c.onrender.com"
 git push heroku main
 ```
@@ -189,9 +189,9 @@ git push heroku main
 Add these to your deployment platform:
 
 ```bash
-TELEGRAM_BOT_TOKEN=***REMOVED***
-TELEGRAM_CHAT_ID=***REMOVED***
-OPENWEATHER_API_KEY=***REMOVED***
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token-here
+TELEGRAM_CHAT_ID=your-telegram-chat-id-here
+OPENWEATHER_API_KEY=your-openweather-api-key-here
 BACKEND_URL=https://smart-agriculture-backend-my7c.onrender.com
 WEATHER_CITY=Erode
 ```

@@ -7,8 +7,8 @@ import os
 from supabase import create_client, Client
 
 # Supabase configuration
-SUPABASE_URL = "https://zkqhyojleofjngbfeses.supabase.co"
-SUPABASE_SERVICE_ROLE_KEY = "***REMOVED***"
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 def test_supabase_connection():
     """Test Supabase database connection"""
@@ -153,7 +153,7 @@ def main():
         print("2. 🚀 You can now run the backend services")
         print("3. 🌐 Deploy to production when ready")
     
-    print(f"\n🔗 Supabase Dashboard: https://supabase.com/dashboard/project/zkqhyojleofjngbfeses")
+    print(f"\n🔗 Supabase Dashboard: https://supabase.com/dashboard/project/your-project-id")
 
 if __name__ == "__main__":
     main()

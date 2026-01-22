@@ -25,9 +25,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Configuration - Use environment variables for security
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', "***REMOVED***")
-CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', "***REMOVED***")  # tn_surya_777
-OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY', "***REMOVED***")
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
 WEBSOCKET_URL = os.getenv('WEBSOCKET_URL', "ws://localhost:8080/ws")
 BACKEND_URL = os.getenv('BACKEND_URL', "http://localhost:8000")
 CITY = os.getenv('WEATHER_CITY', "Erode")

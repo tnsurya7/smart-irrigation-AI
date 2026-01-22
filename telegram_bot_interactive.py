@@ -9,6 +9,7 @@ Enhanced Interactive Telegram Bot for Smart Agriculture Dashboard
 - All existing features combined
 """
 
+import os
 import requests
 import json
 import time
@@ -32,7 +33,7 @@ CHAT_ID = "***REMOVED***"
 # FastAPI Backend Configuration
 BACKEND_URL = "http://localhost:8000"
 WEBSOCKET_URL = "ws://localhost:8080/ws"
-OPENWEATHER_API_KEY = "***REMOVED***"
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 CITY = "Erode"
 
 # Global tracking variables

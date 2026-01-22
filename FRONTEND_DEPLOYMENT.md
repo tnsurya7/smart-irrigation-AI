@@ -28,7 +28,7 @@ Add these environment variables in Vercel (replace with your actual values):
 ```
 VITE_API_BASE_URL=https://smart-agriculture-backend-my7c.onrender.com/api
 VITE_WS_URL=wss://smart-agriculture-backend-my7c.onrender.com/ws
-VITE_SUPABASE_URL=https://zkqhyojleofjngbfeses.supabase.co
+VITE_SUPABASE_URL=your-supabase-url-here
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key-here
 VITE_OPENWEATHER_API_KEY=your-openweather-api-key-here
 VITE_N8N_WEBHOOK_URL=your-n8n-webhook-url-here

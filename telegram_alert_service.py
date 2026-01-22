@@ -23,7 +23,7 @@ BOT_TOKEN = "***REMOVED***"
 CHAT_ID = "***REMOVED***"
 
 # OpenWeather API Configuration
-OPENWEATHER_API_KEY = "***REMOVED***"
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 LOCATION = "Erode"
 WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
 

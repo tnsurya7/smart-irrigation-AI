@@ -253,7 +253,7 @@ def get_weather():
     """
     try:
         import requests
-        api_key = os.getenv("OPENWEATHER_API_KEY", "***REMOVED***")
+        api_key = os.getenv("OPENWEATHER_API_KEY")
         city = "Bangalore"  # Default city
         url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
         

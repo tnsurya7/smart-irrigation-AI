@@ -25,9 +25,9 @@ fi
 
 # Set environment variables
 echo "🔧 Setting up environment variables..."
-export TELEGRAM_BOT_TOKEN="***REMOVED***"
-export TELEGRAM_CHAT_ID="***REMOVED***"
-export OPENWEATHER_API_KEY="***REMOVED***"
+export TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN}"
+export TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID}"
+export OPENWEATHER_API_KEY="${OPENWEATHER_API_KEY}"
 export BACKEND_URL="https://smart-agriculture-backend-my7c.onrender.com"
 export WEATHER_CITY="Erode"
 
