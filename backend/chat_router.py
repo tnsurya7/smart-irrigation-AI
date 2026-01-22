@@ -37,19 +37,67 @@ class ChatResponse(BaseModel):
 
 def detect_weather_intent(user_message: str) -> bool:
     """Detect if user is asking about weather"""
-    weather_keywords = ["weather", "rain", "temperature", "humidity", "mala", "mazha", "barani", "climate", "temp", "hot", "cold", "sunny", "cloudy"]
+    weather_keywords = ["weather", "rain", "temperature", "humidity", "mala", "mazha", "barani", "climate", "temp", "hot", "cold", "sunny", "cloudy", "varuma", "forecast"]
     return any(keyword in user_message.lower() for keyword in weather_keywords)
 
 def extract_city(user_message: str) -> str:
-    """Extract city from user message"""
+    """Extract city from user message - India only"""
     message_lower = user_message.lower()
     
+    # Specific city detection
     if "erode" in message_lower:
-        return "Erode"
+        return "Erode,IN"
+    elif "salem" in message_lower:
+        return "Salem,IN"
     elif "tiruchengode" in message_lower or "thiruchengode" in message_lower:
-        return "Tiruchengode"
+        return "Tiruchengode,IN"
+    elif "kerala" in message_lower:
+        return "Kerala,IN"
+    elif "chennai" in message_lower:
+        return "Chennai,IN"
+    elif "bangalore" in message_lower or "bengaluru" in message_lower:
+        return "Bangalore,IN"
+    elif "mumbai" in message_lower:
+        return "Mumbai,IN"
+    elif "delhi" in message_lower:
+        return "Delhi,IN"
+    elif "hyderabad" in message_lower:
+        return "Hyderabad,IN"
+    elif "pune" in message_lower:
+        return "Pune,IN"
     else:
         return "India"  # Default fallback
+
+def get_real_weather_data(city: str) -> str:
+    """Get REAL weather data from OpenWeather API - NEVER use AI for weather"""
+    if not OPENWEATHER_API_KEY:
+        return "🌤️ Weather service not configured. Please try again later."
+    
+    try:
+        # Direct OpenWeather API call
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&units=metric&appid={OPENWEATHER_API_KEY}"
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        city_name = data["name"]
+        temperature = round(data["main"]["temp"])
+        humidity = data["main"]["humidity"]
+        description = data["weather"][0]["description"].title()
+        
+        # Format real weather response
+        return f"🌤️ Weather in {city_name}\n🌡️ Temperature: {temperature}°C\n💧 Humidity: {humidity}%\n☁️ Condition: {description}"
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"OpenWeather API error: {e}")
+        return "🌤️ Weather service temporarily unavailable. Please try again later."
+    except KeyError as e:
+        logger.error(f"Weather data parsing error: {e}")
+        return f"🌍 Weather data not found for {city}. Please check the city name."
+    except Exception as e:
+        logger.error(f"Weather service error: {e}")
+        return "🌤️ Weather service temporarily unavailable. Please try again later."
 
 def call_openrouter_primary(user_message: str) -> str:
     """STEP 1: OpenRouter API (Primary) with strict token limits"""
@@ -142,29 +190,6 @@ def call_gemini_secondary(user_message: str) -> str:
         logger.warning(f"Gemini failed: {e} - falling back to weather")
         raise Exception(f"Gemini failed: {e}")
 
-def get_weather_fallback(city: str) -> str:
-    """STEP 3: Weather API fallback (NO AI)"""
-    if not OPENWEATHER_API_KEY:
-        raise Exception("Weather API key not configured")
-    
-    try:
-        url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHER_API_KEY}&units=metric"
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        
-        data = response.json()
-        
-        city_name = data["name"]
-        temperature = round(data["main"]["temp"])
-        humidity = data["main"]["humidity"]
-        description = data["weather"][0]["description"]
-        
-        return f"🌤️ Weather in {city_name} today:\nTemperature: {temperature}°C\nHumidity: {humidity}%\nCondition: {description.title()}"
-        
-    except Exception as e:
-        logger.warning(f"Weather API failed: {e} - using static fallback")
-        raise Exception(f"Weather API failed: {e}")
-
 def get_static_fallback() -> str:
     """STEP 4: Static final fallback"""
     return "⚠️ Service temporarily unavailable. Please try again later."
@@ -172,8 +197,9 @@ def get_static_fallback() -> str:
 @router.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     """
-    Failsafe Response System with Priority Order:
-    1️⃣ OpenRouter API → 2️⃣ Gemini API → 3️⃣ Weather API → 4️⃣ Static Fallback
+    CORRECT CHAT FLOW:
+    Weather Intent → OpenWeather API (NEVER AI)
+    Non-Weather → OpenRouter → Gemini → Static Fallback
     """
     try:
         user_message = request.message.strip()
@@ -183,6 +209,14 @@ async def chat_endpoint(request: ChatRequest):
         
         logger.info(f"Chat request: {user_message}")
         
+        # PRIORITY 1: Weather Intent Detection (NEVER use AI for weather)
+        if detect_weather_intent(user_message):
+            city = extract_city(user_message)
+            reply = get_real_weather_data(city)
+            logger.info(f"✅ Real weather data returned for {city}")
+            return ChatResponse(reply=reply)
+        
+        # PRIORITY 2: Non-Weather Queries - Use AI Failsafe System
         # STEP 1: Try OpenRouter (Primary)
         try:
             reply = call_openrouter_primary(user_message)
@@ -199,17 +233,7 @@ async def chat_endpoint(request: ChatRequest):
             except Exception as gemini_error:
                 logger.warning(f"Gemini failed: {gemini_error}")
                 
-                # STEP 3: Weather Fallback (if weather intent detected)
-                if detect_weather_intent(user_message):
-                    try:
-                        city = extract_city(user_message)
-                        reply = get_weather_fallback(city)
-                        logger.info(f"✅ Weather fallback response successful for {city}")
-                        return ChatResponse(reply=reply)
-                    except Exception as weather_error:
-                        logger.warning(f"Weather API failed: {weather_error}")
-                
-                # STEP 4: Static Final Fallback
+                # STEP 3: Static Final Fallback
                 reply = get_static_fallback()
                 logger.info("⚠️ Using static final fallback")
                 return ChatResponse(reply=reply)
