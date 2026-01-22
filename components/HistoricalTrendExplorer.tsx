@@ -27,48 +27,77 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load historical data from CSV or generate sample data
+  // Load historical data from backend API with fallback support
   useEffect(() => {
     const loadHistoricalData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/arimax_real_sensor_data.csv');
         
-        if (!response.ok) {
-          throw new Error('CSV file not found');
+        // Try to get data from backend API (which has historical fallback)
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://smart-agriculture-backend-my7c.onrender.com';
+        const response = await fetch(`${API_BASE_URL}/sensor-data/latest?limit=100`);
+        
+        if (response.ok) {
+          const result = await response.json();
+          
+          if (result.data && result.data.length > 0) {
+            // Convert backend data format to component format
+            const data: HistoricalDataPoint[] = result.data.map((item: any) => ({
+              timestamp: item.timestamp,
+              soil_moisture: item.soil_moisture || 0,
+              temperature: item.temperature || 0,
+              humidity: item.humidity || 0,
+              rain_pct: item.rain_raw ? (item.rain_raw / 4095) * 100 : 0, // Convert raw to percentage
+              light_pct: item.light_percent || 0,
+              flow: item.flow_rate || 0,
+              pump_status: item.pump_status === 1
+            }));
+            
+            setHistoricalData(data);
+            console.log('✅ Historical data loaded from backend API:', data.length, 'points');
+            return;
+          }
         }
         
-        const csvText = await response.text();
-        const lines = csvText.trim().split('\n');
+        // Fallback: Try to load from CSV file
+        const csvResponse = await fetch('/arimax_real_sensor_data.csv');
         
-        if (lines.length < 2) {
-          throw new Error('CSV file is empty or invalid');
+        if (csvResponse.ok) {
+          const csvText = await csvResponse.text();
+          const lines = csvText.trim().split('\n');
+          
+          if (lines.length >= 2) {
+            const headers = lines[0].split(',');
+            
+            // Load every 70th row for better performance (100 data points from 7000 rows)
+            const dataLines = lines.slice(1);
+            const step = Math.max(1, Math.floor(dataLines.length / 100)); // Limit to ~100 data points
+            
+            const data: HistoricalDataPoint[] = dataLines
+              .filter((_, index) => index % step === 0)
+              .slice(0, 100) // Hard limit to 100 points
+              .map(line => {
+                const values = line.split(',');
+                return {
+                  timestamp: values[0] || new Date().toISOString(),
+                  soil_moisture: parseFloat(values[1]) || 0,
+                  temperature: parseFloat(values[2]) || 0,
+                  humidity: parseFloat(values[3]) || 0,
+                  rain_pct: parseFloat(values[4]) || 0,
+                  light_pct: parseFloat(values[5]) || 0,
+                  flow: parseFloat(values[6]) || 0,
+                  pump_status: parseFloat(values[7]) === 1 // Pump status from column 7
+                };
+              });
+            
+            setHistoricalData(data);
+            console.log('✅ Historical data loaded from CSV fallback:', data.length, 'points');
+            return;
+          }
         }
         
-        const headers = lines[0].split(',');
+        throw new Error('No data sources available');
         
-        // Load every 70th row for better performance (100 data points from 7000 rows)
-        const dataLines = lines.slice(1);
-        const step = Math.max(1, Math.floor(dataLines.length / 100)); // Limit to ~100 data points
-        
-        const data: HistoricalDataPoint[] = dataLines
-          .filter((_, index) => index % step === 0)
-          .slice(0, 100) // Hard limit to 100 points
-          .map(line => {
-            const values = line.split(',');
-            return {
-              timestamp: values[0] || new Date().toISOString(),
-              soil_moisture: parseFloat(values[1]) || 0,
-              temperature: parseFloat(values[2]) || 0,
-              humidity: parseFloat(values[3]) || 0,
-              rain_pct: parseFloat(values[4]) || 0,
-              light_pct: parseFloat(values[5]) || 0,
-              flow: parseFloat(values[6]) || 0,
-              pump_status: parseFloat(values[7]) === 1 // Pump status from column 7
-            };
-          });
-        
-        setHistoricalData(data);
       } catch (error) {
         console.error('Error loading historical data:', error);
         // Generate realistic historical data with proper date range (Nov 21 - Dec 19)
@@ -106,6 +135,7 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
           };
         });
         setHistoricalData(sampleData);
+        console.log('⚠️ Using generated fallback data:', sampleData.length, 'points');
       } finally {
         setLoading(false);
       }
