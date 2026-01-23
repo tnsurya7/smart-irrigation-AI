@@ -54,11 +54,17 @@ const SimpleDashboard: React.FC = () => {
     
     ws.onmessage = (event) => {
       try {
-        const newData = JSON.parse(event.data);
-        console.log('📡 Received data:', newData);
+        const message = JSON.parse(event.data);
+        console.log('📡 Received data:', message);
         
-        if (newData.source === 'esp32') {
-          setData(newData);
+        // Handle both direct ESP32 data and USB bridge data transparently
+        if (message.type === 'sensor_data' && message.data) {
+          // Data from USB bridge - treat as normal ESP32 data
+          setData(message.data);
+          setLastUpdate(new Date().toLocaleTimeString());
+        } else if (message.source === 'esp32') {
+          // Direct ESP32 data
+          setData(message);
           setLastUpdate(new Date().toLocaleTimeString());
         }
       } catch (error) {

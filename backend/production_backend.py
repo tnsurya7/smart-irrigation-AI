@@ -399,6 +399,85 @@ async def create_sensor_data(data: SensorDataModel, user: dict = Depends(get_cur
         logger.error(f"Error storing sensor data: {e}")
         raise HTTPException(status_code=500, detail="Failed to store sensor data")
 
+# DEMO MODE ONLY - USB Bridge Endpoint
+@app.post("/demo/esp32")
+async def demo_esp32_data(request: dict):
+    """TEMPORARY: Accept ESP32 data via USB bridge for demo mode"""
+    try:
+        logger.info("📡 USB: ESP32 data received")
+        
+        # Validate required fields
+        required_fields = ["source", "temperature", "humidity", "soil"]
+        for field in required_fields:
+            if field not in request:
+                raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+        
+        # Extract data from ESP32 JSON
+        sensor_data = {
+            "source": request.get("source", "esp32"),
+            "temperature": float(request.get("temperature", 0)),
+            "humidity": float(request.get("humidity", 0)),
+            "soil_moisture": float(request.get("soil", 0)),
+            "rain_raw": 0,  # Not provided by ESP32 in demo
+            "rain_detected": request.get("rain_detected", False),
+            "light_raw": int(request.get("light_percent", 0) * 40.95),  # Convert % to raw
+            "light_percent": float(request.get("light_percent", 0)),
+            "light_state": request.get("light_state", "normal"),
+            "flow_rate": float(request.get("flow", 0)),
+            "total_liters": float(request.get("total", 0)),
+            "pump_status": int(request.get("pump", 0)),
+            "mode": request.get("mode", "auto"),
+            "rain_expected": request.get("rain_expected", False),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+        # Update global latest sensor data for WebSocket broadcasting
+        global latest_sensor_data
+        latest_sensor_data = sensor_data
+        
+        # Broadcast to all WebSocket clients (dashboard and mobile)
+        if manager.active_connections:
+            broadcast_data = {
+                "type": "sensor_data",
+                "data": sensor_data,
+                "source": "ESP32_USB"
+            }
+            await manager.broadcast(json.dumps(broadcast_data))
+            logger.info(f"📡 USB: Broadcasted to {len(manager.active_connections)} WebSocket clients")
+        
+        # Store in database for persistence (optional for demo)
+        try:
+            supabase.table('sensor_data').insert({
+                "temperature": sensor_data["temperature"],
+                "humidity": sensor_data["humidity"],
+                "soil_moisture": sensor_data["soil_moisture"],
+                "rain_raw": sensor_data["rain_raw"],
+                "rain_detected": sensor_data["rain_detected"],
+                "light_raw": sensor_data["light_raw"],
+                "light_percent": sensor_data["light_percent"],
+                "light_state": sensor_data["light_state"],
+                "flow_rate": sensor_data["flow_rate"],
+                "total_liters": sensor_data["total_liters"],
+                "pump_status": sensor_data["pump_status"],
+                "mode": sensor_data["mode"],
+                "rain_expected": sensor_data["rain_expected"],
+                "source": "esp32_usb"
+            }).execute()
+        except Exception as db_error:
+            logger.warning(f"USB bridge: Database storage failed (continuing): {db_error}")
+        
+        logger.info(f"✅ USB: ESP32 data processed - Temp: {sensor_data['temperature']}°C, Humidity: {sensor_data['humidity']}%, Soil: {sensor_data['soil_moisture']}%")
+        
+        return {
+            "success": True,
+            "message": "ESP32 USB data received and broadcasted",
+            "clients_notified": len(manager.active_connections)
+        }
+        
+    except Exception as e:
+        logger.error(f"USB bridge endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to process USB data: {str(e)}")
+
 @app.get("/sensor-data/latest")
 async def get_latest_sensor_data(limit: int = 100):
     """Get latest sensor data"""

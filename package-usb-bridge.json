@@ -1,0 +1,21 @@
+{
+  "name": "esp32-usb-bridge",
+  "version": "1.0.0",
+  "description": "ESP32 USB to Backend Bridge for Demo Mode",
+  "main": "usb_esp32_bridge.js",
+  "scripts": {
+    "start": "node usb_esp32_bridge.js",
+    "dev": "nodemon usb_esp32_bridge.js"
+  },
+  "dependencies": {
+    "serialport": "^12.0.0",
+    "@serialport/parser-readline": "^12.0.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "keywords": ["esp32", "usb", "serial", "bridge", "demo"],
+  "author": "Smart Agriculture System",
+  "license": "MIT"
+}
