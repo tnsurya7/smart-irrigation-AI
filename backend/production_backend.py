@@ -756,10 +756,11 @@ async def websocket_endpoint(websocket: WebSocket):
     allowed_origins = [
         "https://smart-agriculture-dashboard-2025.vercel.app",
         "http://localhost:5173",
-        "http://localhost:3000"
+        "http://localhost:3000",
+        "file://"  # Allow ESP32 connections
     ]
     
-    # Validate origin (allow ESP32 connections without origin header)
+    # Validate origin (allow ESP32 and dashboard connections)
     if origin and origin not in allowed_origins:
         logger.warning(f"WebSocket connection rejected - invalid origin: {origin}")
         await websocket.close(code=1008, reason="Invalid origin")
