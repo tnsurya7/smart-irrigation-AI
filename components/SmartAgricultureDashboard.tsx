@@ -15,7 +15,7 @@ import { HistoricalTrendExplorer } from './HistoricalTrendExplorer';
 import { ChatBot } from './ChatBot';
 
 export const SmartAgricultureDashboard: React.FC = () => {
-  const { data, history, connection, hasLiveData, deviceOffline, sendPump, mode, setMode } = useSmartFarmData();
+  const { data, history, connection, hasLiveData, sendPump, mode, setMode } = useSmartFarmData();
   
   const [modelReport, setModelReport] = useState<ModelReport | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
@@ -91,13 +91,13 @@ export const SmartAgricultureDashboard: React.FC = () => {
       />
       
       <main className="p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
-        {/* Device Offline Banner */}
-        {deviceOffline && (
+        {/* Device Offline Banner - Only show when disconnected */}
+        {!hasLiveData && (
           <div className="mb-6 bg-orange-900/30 border border-orange-500/50 rounded-xl p-4 animate-pulse">
             <div className="flex items-center gap-3">
               <div className="w-4 h-4 bg-orange-400 rounded-full"></div>
               <p className="text-orange-300 font-medium">
-                ⚠️ Live device offline – showing last known data
+                ⚠️ Waiting for ESP32 connection – All values cleared
               </p>
             </div>
           </div>

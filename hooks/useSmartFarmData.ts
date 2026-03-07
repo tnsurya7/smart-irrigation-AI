@@ -45,6 +45,25 @@ export default function useSmartFarmData() {
           console.log("⚠️ ESP32 timeout - no data for 10 seconds");
           setConnection("disconnected");
           setHasLiveData(false);
+          
+          // Clear all data on timeout - only show live data
+          setData({
+            soil: 0,
+            temperature: 0,
+            humidity: 0,
+            rainRaw: 4095,
+            rainDetected: false,
+            ldr: 0,
+            lightPercent: 0,
+            lightStatus: "Normal Light",
+            flow: 0,
+            totalLiters: 0,
+            pump: 0,
+            mode: "auto",
+            rainExpected: false,
+          });
+          setHistory([]);
+          lastDataTimeRef.current = 0;
         }
       }
     }, 2000);
@@ -123,6 +142,25 @@ export default function useSmartFarmData() {
           setConnection("disconnected");
           setHasLiveData(false);
           lastDataTimeRef.current = 0;
+          
+          // Clear all data when disconnected - don't show old values
+          setData({
+            soil: 0,
+            temperature: 0,
+            humidity: 0,
+            rainRaw: 4095,
+            rainDetected: false,
+            ldr: 0,
+            lightPercent: 0,
+            lightStatus: "Normal Light",
+            flow: 0,
+            totalLiters: 0,
+            pump: 0,
+            mode: "auto",
+            rainExpected: false,
+          });
+          setHistory([]); // Clear history too
+          
           setTimeout(connectWS, 3000);
         };
 
@@ -132,6 +170,24 @@ export default function useSmartFarmData() {
           setConnection("disconnected");
           setHasLiveData(false);
           lastDataTimeRef.current = 0;
+          
+          // Clear all data on error - don't show old values
+          setData({
+            soil: 0,
+            temperature: 0,
+            humidity: 0,
+            rainRaw: 4095,
+            rainDetected: false,
+            ldr: 0,
+            lightPercent: 0,
+            lightStatus: "Normal Light",
+            flow: 0,
+            totalLiters: 0,
+            pump: 0,
+            mode: "auto",
+            rainExpected: false,
+          });
+          setHistory([]);
         };
       } catch (error) {
         console.error("WebSocket connection failed:", error);
