@@ -759,13 +759,13 @@ async def websocket_endpoint(websocket: WebSocket):
         "http://localhost:3000"
     ]
     
-    # Validate origin
+    # Validate origin (allow ESP32 connections without origin header)
     if origin and origin not in allowed_origins:
         logger.warning(f"WebSocket connection rejected - invalid origin: {origin}")
         await websocket.close(code=1008, reason="Invalid origin")
         return
     
-    # Accept connection
+    # Accept connection (ESP32 and dashboard)
     await manager.connect(websocket)
     
     try:

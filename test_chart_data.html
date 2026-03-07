@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart Data Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1e293b;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            background: #334155;
+        }
+        .data-sample {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Historical Chart Data Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Test CSV Data Loading</h2>
+        <button onclick="testCSVData()">Load CSV Data</button>
+        <div id="csv-result" class="data-sample"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Test Fallback JSON Data</h2>
+        <button onclick="testFallbackData()">Load Fallback Data</button>
+        <div id="fallback-result" class="data-sample"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Test Backend API</h2>
+        <button onclick="testBackendAPI()">Test Backend</button>
+        <div id="backend-result" class="data-sample"></div>
+    </div>
+
+    <script>
+        async function testCSVData() {
+            const resultDiv = document.getElementById('csv-result');
+            try {
+                resultDiv.textContent = 'Loading CSV data...';
+                
+                const response = await fetch('/arimax_real_sensor_data.csv');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const csvText = await response.text();
+                const lines = csvText.trim().split('\n');
+                
+                if (lines.length < 2) {
+                    throw new Error('CSV file is empty or has no data rows');
+                }
+                
+                const headers = lines[0].split(',');
+                const firstDataRow = lines[1].split(',');
+                
+                const sampleData = {
+                    headers: headers,
+                    firstRow: firstDataRow,
+                    totalRows: lines.length - 1,
+                    soilMoisture: parseFloat(firstDataRow[1]),
+                    temperature: parseFloat(firstDataRow[2]),
+                    humidity: parseFloat(firstDataRow[3])
+                };
+                
+                resultDiv.textContent = JSON.stringify(sampleData, null, 2);
+                
+                // Check if all values are zero
+                const isAllZero = parseFloat(firstDataRow[1]) === 0 && 
+                                 parseFloat(firstDataRow[2]) === 0 && 
+                                 parseFloat(firstDataRow[3]) === 0;
+                
+                if (isAllZero) {
+                    resultDiv.textContent += '\n\n⚠️ WARNING: All sensor values are ZERO - fallback should trigger!';
+                } else {
+                    resultDiv.textContent += '\n\n✅ SUCCESS: CSV has valid sensor data - no fallback needed';
+                }
+                
+            } catch (error) {
+                resultDiv.textContent = `❌ ERROR: ${error.message}`;
+            }
+        }
+        
+        async function testFallbackData() {
+            const resultDiv = document.getElementById('fallback-result');
+            try {
+                resultDiv.textContent = 'Loading fallback JSON data...';
+                
+                const response = await fetch('/data/historical_sensor_data.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const jsonData = await response.json();
+                
+                const sampleData = {
+                    totalRecords: jsonData.length,
+                    firstRecord: jsonData[0],
+                    soilRange: [
+                        Math.min(...jsonData.map(d => d.soil_moisture)),
+                        Math.max(...jsonData.map(d => d.soil_moisture))
+                    ],
+                    tempRange: [
+                        Math.min(...jsonData.map(d => d.temperature)),
+                        Math.max(...jsonData.map(d => d.temperature))
+                    ]
+                };
+                
+                resultDiv.textContent = JSON.stringify(sampleData, null, 2);
+                resultDiv.textContent += '\n\n✅ SUCCESS: Fallback JSON data loaded successfully';
+                
+            } catch (error) {
+                resultDiv.textContent = `❌ ERROR: ${error.message}`;
+            }
+        }
+        
+        async function testBackendAPI() {
+            const resultDiv = document.getElementById('backend-result');
+            try {
+                resultDiv.textContent = 'Testing backend API...';
+                
+                const API_BASE_URL = 'https://smart-agriculture-backend-my7c.onrender.com';
+                const response = await fetch(`${API_BASE_URL}/sensor-data/latest?limit=5`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                const sampleData = {
+                    dataCount: result.data ? result.data.length : 0,
+                    firstRecord: result.data ? result.data[0] : null,
+                    hasData: result.data && result.data.length > 0
+                };
+                
+                resultDiv.textContent = JSON.stringify(sampleData, null, 2);
+                
+                if (result.data && result.data.length > 0) {
+                    const firstRecord = result.data[0];
+                    const hasValidData = firstRecord.soil_moisture > 0 || 
+                                       firstRecord.temperature > 0 || 
+                                       firstRecord.humidity > 0;
+                    
+                    if (hasValidData) {
+                        resultDiv.textContent += '\n\n✅ SUCCESS: Backend has valid sensor data';
+                    } else {
+                        resultDiv.textContent += '\n\n⚠️ WARNING: Backend data has zero values - fallback should trigger';
+                    }
+                } else {
+                    resultDiv.textContent += '\n\n⚠️ WARNING: Backend returned no data - fallback should trigger';
+                }
+                
+            } catch (error) {
+                resultDiv.textContent = `❌ ERROR: ${error.message}`;
+            }
+        }
+        
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            console.log('🧪 Running automatic chart data tests...');
+            testCSVData();
+            setTimeout(testFallbackData, 1000);
+            setTimeout(testBackendAPI, 2000);
+        });
+    </script>
+</body>
+</html>

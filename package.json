@@ -14,12 +14,17 @@
     "backend": "cd backend && python production_backend.py",
     "websocket": "cd backend && python production_websocket.py",
     "telegram": "python telegram_bot_simple.py",
+    "demo": "python3 start_demo.py",
+    "demo:backend": "python3 usb_serial_reader.py",
+    "demo:dashboard": "vite --port 3000",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@serialport/parser-readline": "^13.0.0",
     "@supabase/supabase-js": "^2.89.0",
     "@vitejs/plugin-react": "^5.1.2",
+    "axios": "^1.13.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "recharts": "^3.6.0",

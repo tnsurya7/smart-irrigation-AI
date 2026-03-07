@@ -28,7 +28,7 @@ class ESP32USBBridge {
     }
 
     async findESP32Port() {
-        """Find ESP32 port automatically"""
+        // Find ESP32 port automatically
         try {
             const ports = await SerialPort.list();
             console.log('🔍 Available serial ports:');
@@ -68,7 +68,7 @@ class ESP32USBBridge {
     }
 
     async connect() {
-        """Connect to ESP32 via USB serial"""
+        // Connect to ESP32 via USB serial
         try {
             console.log('🚀 ESP32 USB Bridge Starting...');
             console.log(`🎯 Backend: ${BACKEND_URL}${DEMO_ENDPOINT}`);
@@ -113,7 +113,7 @@ class ESP32USBBridge {
     }
 
     setupEventHandlers() {
-        """Set up serial port event handlers"""
+        // Set up serial port event handlers
         
         // Handle incoming data
         this.parser.on('data', (line) => {
@@ -134,7 +134,7 @@ class ESP32USBBridge {
     }
 
     async handleESP32Data(rawData) {
-        """Process ESP32 JSON data and forward to backend"""
+        // Process ESP32 JSON data and forward to backend
         try {
             // Skip empty lines
             if (!rawData || rawData.length === 0) {
@@ -182,7 +182,7 @@ class ESP32USBBridge {
     }
 
     async forwardToBackend(sensorData) {
-        """Forward ESP32 data to Render backend"""
+        // Forward ESP32 data to Render backend
         try {
             const response = await axios.post(`${BACKEND_URL}${DEMO_ENDPOINT}`, sensorData, {
                 headers: {
@@ -210,7 +210,7 @@ class ESP32USBBridge {
     }
 
     getStatus() {
-        """Get bridge status"""
+        // Get bridge status
         return {
             connected: this.isConnected,
             dataCount: this.dataCount,
@@ -220,7 +220,7 @@ class ESP32USBBridge {
     }
 
     async disconnect() {
-        """Disconnect from ESP32"""
+        // Disconnect from ESP32
         if (this.port && this.port.isOpen) {
             await new Promise((resolve) => {
                 this.port.close(resolve);
@@ -234,7 +234,7 @@ class ESP32USBBridge {
 // Main execution
 async function main() {
     console.log('🌱 ESP32 USB → Backend Bridge');
-    console.log('=' * 50);
+    console.log('='.repeat(50));
     
     const bridge = new ESP32USBBridge();
     

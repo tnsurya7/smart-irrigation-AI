@@ -1,12 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { SensorData } from "../types";
 
-// Production-ready WebSocket configuration
-const WS_URL = import.meta.env.VITE_WS_URL;
-
-if (!WS_URL) {
-  throw new Error('VITE_WS_URL environment variable is required');
-}
+// Demo mode: Use USB backend instead of WebSocket
+const USB_API_URL = "http://localhost:5002/api/live-data";
 
 // Helper function for light status
 function getLightStatus(raw: number): string {
@@ -16,7 +12,6 @@ function getLightStatus(raw: number): string {
 }
 
 export default function useSmartFarmData() {
-  const wsRef = useRef<WebSocket | null>(null);
   const [connection, setConnection] = useState<"connected" | "disconnected">("disconnected");
   const [data, setData] = useState<SensorData>({
     // STRICT: Only zeros and safe defaults - NEVER fake values like 25°C or 50%
@@ -37,8 +32,7 @@ export default function useSmartFarmData() {
   
   const [hasLiveData, setHasLiveData] = useState(false); // Track if we have received live ESP32 data
   const [history, setHistory] = useState<SensorData[]>([]);
-  const [cooldown, setCooldown] = useState(false);
-  const [wsEnabled, setWsEnabled] = useState(true); // Allow disabling WebSocket for offline mode
+  const [deviceOffline, setDeviceOffline] = useState(false); // Track if ESP32 is offline
   
   // Add predicted soil moisture for ML forecast display
   const [predictedSoil, setPredictedSoil] = useState<number | null>(null);
@@ -55,184 +49,138 @@ export default function useSmartFarmData() {
     }
   }, [hasLiveData]);
   
-  // Prevent repeated pump commands
-  const lastPumpState = useRef<"ON" | "OFF" | null>(null);
-  const lastPumpTime = useRef<number>(0);
-
   // ---------------------------
-  // SEND PUMP CONTROL COMMAND (SAFE - NO SPAM)
-  // ---------------------------
-  const sendPump = (value: "ON" | "OFF") => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: "cmd",
-        cmd: "pump",
-        value,
-      }));
-      console.log("Dashboard -> ESP:", value);
-    }
-  };
-
-  const sendPumpSafe = (value: "ON" | "OFF") => {
-    const now = Date.now();
-    
-    // Do not spam command if already in this state
-    if (lastPumpState.current === value) {
-      return;
-    }
-    
-    // Cooldown: prevent commands within 8 seconds
-    if (now - lastPumpTime.current < 8000) {
-      return;
-    }
-    
-    // Update tracking
-    lastPumpState.current = value;
-    lastPumpTime.current = now;
-    
-    // Send command
-    sendPump(value);
-  };
-
-  // NO AUTO IRRIGATION LOGIC - ESP32 IS THE SINGLE SOURCE OF TRUTH
-  // Dashboard only sends commands, ESP32 makes all irrigation decisions
-
-  // ---------------------------
-  // WEBSOCKET CONNECTION (OPTIONAL)
+  // USB POLLING (REPLACES WEBSOCKET)
   // ---------------------------
   useEffect(() => {
-    if (!wsEnabled) {
-      console.log("WebSocket disabled - running in offline mode");
-      return;
-    }
-
-    const connectWS = () => {
+    console.log("🚀 Starting USB polling mode for demo");
+    console.log("📡 Polling:", USB_API_URL);
+    
+    const pollUSBData = async () => {
       try {
-        const ws = new WebSocket(WS_URL);
-        wsRef.current = ws;
-
-      ws.onopen = () => {
-        console.log("WS CONNECTED - Waiting for Arduino data...");
-        // Don't set connected until we receive actual Arduino data
-        ws.send(JSON.stringify({
-          type: "register",
-          role: "dashboard",
-          id: "dashboard1",
-        }));
-      };
-
-      ws.onmessage = (msg) => {
-        try {
-          const obj = JSON.parse(msg.data);
-          console.log("🔥 WS DATA RECEIVED:", obj);
-          
-          // CRITICAL: ONLY process messages with source === "esp32"
-          if (obj.source !== "esp32") {
-            console.log("⏭️ Ignoring non-ESP32 message:", obj.type || "unknown");
-            return; // Skip system, register, heartbeat messages
-          }
-          
-          console.log("✅ ESP32 message detected, processing...");
-          setConnection("connected");
-          
-          // SAFE DATA NORMALIZATION - Ensure all fields are valid numbers
-          const newData: SensorData = {
-            soil: typeof obj.soil === "number" ? obj.soil : 0,
-            temperature: typeof obj.temperature === "number" ? obj.temperature : 0,
-            humidity: typeof obj.humidity === "number" ? obj.humidity : 0,
-            rainRaw: typeof obj.rain_raw === "number" ? obj.rain_raw : 4095,
-            rainDetected: Boolean(obj.rain_detected),
-            ldr: typeof obj.light_raw === "number" ? obj.light_raw : 500,
-            lightPercent: typeof obj.light_percent === "number" ? obj.light_percent : 50,
-            lightStatus: obj.light_state || "normal",
-            flow: typeof obj.flow === "number" ? obj.flow : 0,
-            totalLiters: typeof obj.total === "number" ? obj.total : 0,
-            pump: typeof obj.pump === "number" ? obj.pump : 0,
-            mode: (obj.mode === "auto" || obj.mode === "manual") ? obj.mode : "auto",
-            rainExpected: Boolean(obj.rain_expected),
-          };
-          
-          console.log("✅ NORMALIZED ESP32 DATA:", newData);
-          setData(newData);
-          setHasLiveData(true);
-          setHistory((h) => [...h.slice(-49), newData]);
-          
-          // Save normalized data
-          try {
-            localStorage.setItem('lastESP32Data', JSON.stringify(newData));
-          } catch (e) {
-            console.log("Failed to save ESP32 data:", e);
-          }
-          
-        } catch (e) {
-          console.error("WS Parse Error:", e);
+        const response = await fetch(USB_API_URL);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
         }
-      };
-
-        ws.onclose = (event) => {
-          console.log("WS CLOSED → RECONNECTING IN 2s", event.code, event.reason);
-          setConnection("disconnected");
-          setHasLiveData(false); // Reset live data flag on disconnect
-          if (wsEnabled) {
-            setTimeout(connectWS, 2000);
-          }
+        
+        const usbData = await response.json();
+        console.log("📊 USB Data received:", usbData);
+        
+        // Check if ESP32 device is offline
+        const isDeviceOffline = usbData.device_status === "offline";
+        setDeviceOffline(isDeviceOffline);
+        
+        // Set connection status based on API response
+        setConnection("connected"); // API is working
+        
+        // Convert USB data to dashboard format (EXACT MATCH)
+        const newData: SensorData = {
+          soil: typeof usbData.soil === "number" ? usbData.soil : 0,
+          temperature: typeof usbData.temperature === "number" ? usbData.temperature : 0,
+          humidity: typeof usbData.humidity === "number" ? usbData.humidity : 0,
+          rainRaw: typeof usbData.rainRaw === "number" ? usbData.rainRaw : 4095,
+          rainDetected: Boolean(usbData.rainDetected),
+          ldr: typeof usbData.ldr === "number" ? usbData.ldr : 0,
+          lightPercent: typeof usbData.lightPercent === "number" ? usbData.lightPercent : 0,
+          lightStatus: usbData.lightStatus || "Normal Light",
+          flow: typeof usbData.flow === "number" ? usbData.flow : 0,
+          totalLiters: typeof usbData.totalLiters === "number" ? usbData.totalLiters : 0,
+          pump: typeof usbData.pump === "number" ? usbData.pump : 0,
+          mode: (usbData.mode === "auto" || usbData.mode === "manual") ? usbData.mode : "auto",
+          rainExpected: Boolean(usbData.rainExpected),
         };
-
-        ws.onerror = (error) => {
-          console.log("WS ERROR:", error);
-          setConnection("disconnected");
-          setHasLiveData(false); // Reset live data flag on error
-        };
+        
+        console.log("✅ NORMALIZED USB DATA:", newData);
+        setData(newData);
+        setHasLiveData(!isDeviceOffline); // Only set live data if device is online
+        setHistory((h) => [...h.slice(-49), newData]);
+        
+        // Save normalized data
+        try {
+          localStorage.setItem('lastESP32Data', JSON.stringify(newData));
+        } catch (e) {
+          console.log("Failed to save ESP32 data:", e);
+        }
+        
       } catch (error) {
-        console.log("WebSocket connection failed:", error);
+        console.error("❌ USB polling failed:", error);
         setConnection("disconnected");
         setHasLiveData(false);
+        setDeviceOffline(true);
       }
     };
 
-    connectWS();
-  }, [wsEnabled]);
+    // Initial poll
+    pollUSBData();
+    
+    // Poll every 2 seconds
+    const interval = setInterval(pollUSBData, 2000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
-  // Send mode command to ESP32 and update local state
-  const setMode = (newMode: "auto" | "manual") => {
+  // Send pump command (USB mode - actual commands)
+  const sendPumpCommand = async (command: "ON" | "OFF") => {
+    try {
+      const endpoint = command === "ON" ? "/api/pump/on" : "/api/pump/off";
+      const response = await fetch(`http://localhost:5002${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const result = await response.json();
+      console.log("📤 Pump command result:", result);
+      
+      if (result.status === "success") {
+        console.log(`✅ Pump ${command} command sent successfully`);
+      } else {
+        console.error(`❌ Pump command failed: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("❌ Failed to send pump command:", error);
+    }
+  };
+
+  // Send mode command (USB mode - actual commands)
+  const setMode = async (newMode: "auto" | "manual") => {
     // Update local state immediately for better UX
     setData(prev => ({
       ...prev,
       mode: newMode
     }));
     
-    // Send command to ESP32 if connected
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      const command = {
-        mode: newMode // "auto" or "manual"
-      };
-      wsRef.current.send(JSON.stringify(command));
-      console.log("📤 Mode command sent to ESP32:", command);
-    } else {
-      console.log("📤 Mode changed locally (ESP32 not connected):", newMode);
+    try {
+      if (newMode === "auto") {
+        const response = await fetch("http://localhost:5002/api/pump/auto", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        const result = await response.json();
+        console.log("📤 Auto mode result:", result);
+        
+        if (result.status === "success") {
+          console.log("✅ Auto mode enabled successfully");
+        } else {
+          console.error(`❌ Auto mode failed: ${result.message}`);
+        }
+      } else {
+        console.log("📤 Manual mode set locally (no ESP32 command needed)");
+      }
+    } catch (error) {
+      console.error("❌ Failed to set mode:", error);
     }
   };
 
-  // Send pump command to ESP32 (only in manual mode)
-  const sendPumpCommand = (command: "ON" | "OFF") => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      const pumpCmd = {
-        pump_cmd: command
-      };
-      wsRef.current.send(JSON.stringify(pumpCmd));
-      console.log("📤 Pump command sent to ESP32:", pumpCmd);
-    }
-  };
-
-  // Send rain forecast to ESP32
+  // Send rain forecast (demo mode - log only)
   const sendRainForecast = (rainExpected: boolean) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      const forecast = {
-        rain_expected: rainExpected
-      };
-      wsRef.current.send(JSON.stringify(forecast));
-      console.log("📤 Rain forecast sent to ESP32:", forecast);
-    }
+    console.log("📤 Rain forecast (demo mode):", rainExpected);
+    console.log("🎯 In production, this would send forecast to ESP32");
   };
 
   return {
@@ -243,6 +191,7 @@ export default function useSmartFarmData() {
     history,
     connection,
     hasLiveData, // Indicates if we have received live ESP32 data
+    deviceOffline, // Indicates if ESP32 device is offline
     sendPump: sendPumpCommand,
     mode: data.mode,
     setMode,

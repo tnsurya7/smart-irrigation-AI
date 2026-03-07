@@ -15,7 +15,7 @@ import { HistoricalTrendExplorer } from './HistoricalTrendExplorer';
 import { ChatBot } from './ChatBot';
 
 export const SmartAgricultureDashboard: React.FC = () => {
-  const { data, history, connection, hasLiveData, sendPump, mode, setMode } = useSmartFarmData();
+  const { data, history, connection, hasLiveData, deviceOffline, sendPump, mode, setMode } = useSmartFarmData();
   
   const [modelReport, setModelReport] = useState<ModelReport | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
@@ -91,6 +91,18 @@ export const SmartAgricultureDashboard: React.FC = () => {
       />
       
       <main className="p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+        {/* Device Offline Banner */}
+        {deviceOffline && (
+          <div className="mb-6 bg-orange-900/30 border border-orange-500/50 rounded-xl p-4 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="w-4 h-4 bg-orange-400 rounded-full"></div>
+              <p className="text-orange-300 font-medium">
+                ⚠️ Live device offline – showing last known data
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Connection & Auto Irrigation Status */}
         <div className="mb-8 flex flex-wrap gap-4 items-center animate-slide-up">
           <div className={`px-4 py-3 rounded-xl font-semibold text-sm flex items-center gap-3 transition-all duration-300 hover:scale-105 ${safeConnection === 'connected' ? 'bg-green-900/30 text-green-300 border border-green-800/50' : 'bg-red-900/30 text-red-300 border border-red-800/50'}`}>
