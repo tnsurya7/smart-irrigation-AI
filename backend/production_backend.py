@@ -388,10 +388,12 @@ class ConnectionManager:
     
     async def broadcast(self, message: str):
         disconnected = []
-        for connection in self.active_connections:
+        # Iterate over a copy to avoid "Set changed size during iteration" error
+        for connection in list(self.active_connections):
             try:
                 await connection.send_text(message)
-            except:
+            except Exception as e:
+                logger.debug(f"Failed to send to client: {e}")
                 disconnected.append(connection)
         
         # Remove disconnected clients
