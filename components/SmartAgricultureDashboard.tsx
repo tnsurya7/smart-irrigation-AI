@@ -142,11 +142,11 @@ export const SmartAgricultureDashboard: React.FC = () => {
               </div>
               <div className="text-center">
                 <span className="text-4xl font-bold text-yellow-400 transition-all duration-400 ease-out">
-                  {safeData.ldr}
+                  {safeData.lightPercent}
                 </span>
-                <span className="text-xl text-slate-400 ml-1">lux</span>
+                <span className="text-xl text-slate-400 ml-1">%</span>
               </div>
-              <p className="text-sm text-slate-300 mt-3 px-3 py-1 bg-slate-700/50 rounded-full">{safeData.lightStatus}</p>
+              <p className="text-sm text-slate-300 mt-3 px-3 py-1 bg-slate-700/50 rounded-full capitalize">{safeData.lightStatus.replace('_', ' ')}</p>
             </div>
           </div>
 
@@ -156,12 +156,12 @@ export const SmartAgricultureDashboard: React.FC = () => {
                 <p className="text-sm text-slate-300 font-medium text-center">🌧️ Rain Sensor</p>
               </div>
               <div className="text-center">
-                <span className={`text-4xl font-bold transition-all duration-400 ease-out ${safeData.rainRaw < 500 ? 'text-blue-400' : 'text-green-400'}`}>
-                  {safeData.rainRaw < 500 ? '🌧️' : '☀️'}
+                <span className={`text-4xl font-bold transition-all duration-400 ease-out ${safeData.rainDetected ? 'text-blue-400' : 'text-green-400'}`}>
+                  {safeData.rainDetected ? '🌧️' : '☀️'}
                 </span>
               </div>
-              <p className={`text-sm mt-3 px-3 py-1 rounded-full font-medium ${safeData.rainRaw < 500 ? 'text-blue-300 bg-blue-900/30' : 'text-green-300 bg-green-900/30'}`}>
-                {safeData.rainRaw < 500 ? 'Raining' : 'Clear'}
+              <p className={`text-sm mt-3 px-3 py-1 rounded-full font-medium ${safeData.rainDetected ? 'text-blue-300 bg-blue-900/30' : 'text-green-300 bg-green-900/30'}`}>
+                {safeData.rainDetected ? 'Rain Detected' : 'Clear'}
               </p>
             </div>
           </div>
