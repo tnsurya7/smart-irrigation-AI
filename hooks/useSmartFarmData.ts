@@ -33,6 +33,24 @@ export default function useSmartFarmData() {
   const [hasLiveData, setHasLiveData] = useState(false);
   const [history, setHistory] = useState<SensorData[]>([]);
   const [predictedSoil, setPredictedSoil] = useState<number | null>(null);
+  const [wsConnected, setWsConnected] = useState(false); // Track WebSocket connection
+  const lastDataTimeRef = useRef<number>(0); // Track last ESP32 data time
+  
+  // Check for ESP32 timeout (no data for 10 seconds = offline)
+  useEffect(() => {
+    const checkTimeout = setInterval(() => {
+      if (lastDataTimeRef.current > 0) {
+        const timeSinceLastData = Date.now() - lastDataTimeRef.current;
+        if (timeSinceLastData > 10000) { // 10 seconds timeout
+          console.log("⚠️ ESP32 timeout - no data for 10 seconds");
+          setConnection("disconnected");
+          setHasLiveData(false);
+        }
+      }
+    }, 2000);
+    
+    return () => clearInterval(checkTimeout);
+  }, []);
   
   useEffect(() => {
     if (!hasLiveData) {
@@ -50,8 +68,9 @@ export default function useSmartFarmData() {
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.log("✅ WebSocket CONNECTED");
-          setConnection("connected");
+          console.log("🔌 WebSocket connection opened (waiting for ESP32 data...)");
+          setWsConnected(true);
+          // Don't set connected yet - wait for actual ESP32 data
           ws.send(JSON.stringify({ type: "register", role: "dashboard", id: "dashboard1" }));
         };
 
@@ -62,28 +81,36 @@ export default function useSmartFarmData() {
             
             if (obj.type === "sensor_update" && obj.data) {
               const s = obj.data;
-              const newData: SensorData = {
-                soil: typeof s.soil === "number" ? s.soil : 0,
-                temperature: typeof s.temperature === "number" ? s.temperature : 0,
-                humidity: typeof s.humidity === "number" ? s.humidity : 0,
-                rainRaw: typeof s.rain_raw === "number" ? s.rain_raw : 4095,
-                rainDetected: Boolean(s.rain_detected),
-                ldr: typeof s.light_raw === "number" ? s.light_raw : 0,
-                lightPercent: typeof s.light_percent === "number" ? s.light_percent : 0,
-                lightStatus: s.light_state || "Normal Light",
-                flow: typeof s.flow === "number" ? s.flow : 0,
-                totalLiters: typeof s.total === "number" ? s.total : 0,
-                pump: typeof s.pump === "number" ? s.pump : 0,
-                mode: s.mode || "auto",
-                rainExpected: Boolean(s.rain_expected),
-              };
               
-              setData(newData);
-              setHasLiveData(true);
-              setHistory((h) => [...h.slice(-49), newData]);
-              try {
-                localStorage.setItem('lastESP32Data', JSON.stringify(newData));
-              } catch (e) {}
+              // Only set connected when we receive actual ESP32 data
+              if (s.source === "esp32") {
+                console.log("✅ ESP32 data received - Device ONLINE");
+                setConnection("connected");
+                lastDataTimeRef.current = Date.now();
+                
+                const newData: SensorData = {
+                  soil: typeof s.soil === "number" ? s.soil : 0,
+                  temperature: typeof s.temperature === "number" ? s.temperature : 0,
+                  humidity: typeof s.humidity === "number" ? s.humidity : 0,
+                  rainRaw: typeof s.rain_raw === "number" ? s.rain_raw : 4095,
+                  rainDetected: Boolean(s.rain_detected),
+                  ldr: typeof s.light_raw === "number" ? s.light_raw : 0,
+                  lightPercent: typeof s.light_percent === "number" ? s.light_percent : 0,
+                  lightStatus: s.light_state || "Normal Light",
+                  flow: typeof s.flow === "number" ? s.flow : 0,
+                  totalLiters: typeof s.total === "number" ? s.total : 0,
+                  pump: typeof s.pump === "number" ? s.pump : 0,
+                  mode: s.mode || "auto",
+                  rainExpected: Boolean(s.rain_expected),
+                };
+                
+                setData(newData);
+                setHasLiveData(true);
+                setHistory((h) => [...h.slice(-49), newData]);
+                try {
+                  localStorage.setItem('lastESP32Data', JSON.stringify(newData));
+                } catch (e) {}
+              }
             }
           } catch (e) {
             console.error("WebSocket parse error:", e);
@@ -92,15 +119,19 @@ export default function useSmartFarmData() {
 
         ws.onclose = (event) => {
           console.log("❌ WebSocket CLOSED, reconnecting...", event.code);
+          setWsConnected(false);
           setConnection("disconnected");
           setHasLiveData(false);
+          lastDataTimeRef.current = 0;
           setTimeout(connectWS, 3000);
         };
 
         ws.onerror = (error) => {
           console.error("❌ WebSocket ERROR:", error);
+          setWsConnected(false);
           setConnection("disconnected");
           setHasLiveData(false);
+          lastDataTimeRef.current = 0;
         };
       } catch (error) {
         console.error("WebSocket connection failed:", error);
