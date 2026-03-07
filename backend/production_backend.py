@@ -218,6 +218,108 @@ latest_weather_data: Optional[Dict[str, Any]] = {
     "last_updated": datetime.utcnow().isoformat()
 }
 
+# Smart Irrigation Controller State
+class IrrigationController:
+    """Smart irrigation controller with hysteresis logic"""
+    def __init__(self):
+        self.mode = "auto"  # "auto" or "manual"
+        self.pump_state = 0  # 0 = OFF, 1 = ON
+        self.last_command_time = datetime.utcnow()
+        
+        # Hysteresis thresholds for stable operation
+        self.SOIL_DRY_THRESHOLD = 30  # Turn pump ON when soil < 30%
+        self.SOIL_WET_THRESHOLD = 45  # Turn pump OFF when soil >= 45%
+        
+    def evaluate_auto_irrigation(self, soil_moisture: float, rain_detected: bool) -> tuple[int, str]:
+        """
+        Evaluate irrigation logic and return (pump_state, reason)
+        
+        Rules:
+        1. Rain detected → Pump OFF (highest priority)
+        2. Soil < 30% → Pump ON (dry soil needs water)
+        3. Soil >= 45% → Pump OFF (soil is wet enough)
+        4. Between 30-45% → Keep current state (hysteresis)
+        """
+        
+        # Priority 1: Rain override
+        if rain_detected:
+            return (0, "AUTO: Rain detected → Pump OFF")
+        
+        # Priority 2: Hysteresis logic for stable operation
+        if soil_moisture < self.SOIL_DRY_THRESHOLD:
+            # Soil is dry, turn pump ON
+            return (1, f"AUTO: Soil dry ({soil_moisture}% < {self.SOIL_DRY_THRESHOLD}%) → Pump ON")
+        
+        elif soil_moisture >= self.SOIL_WET_THRESHOLD:
+            # Soil is wet enough, turn pump OFF
+            return (0, f"AUTO: Soil wet ({soil_moisture}% >= {self.SOIL_WET_THRESHOLD}%) → Pump OFF")
+        
+        else:
+            # Hysteresis zone (30-45%): maintain current state
+            reason = f"AUTO: Soil in hysteresis zone ({soil_moisture}%) → Pump {'ON' if self.pump_state else 'OFF'} (no change)"
+            return (self.pump_state, reason)
+    
+    def process_sensor_data(self, sensor_data: dict) -> Optional[dict]:
+        """
+        Process sensor data and return pump command if needed
+        Returns: {"pump_cmd": "ON"/"OFF"} or None
+        """
+        
+        # Extract sensor values
+        soil_moisture = sensor_data.get("soil", 0)
+        rain_detected = sensor_data.get("rain_detected", False)
+        
+        # Only apply auto logic in AUTO mode
+        if self.mode != "auto":
+            logger.debug(f"Manual mode active - skipping auto irrigation logic")
+            return None
+        
+        # Evaluate irrigation logic
+        new_pump_state, reason = self.evaluate_auto_irrigation(soil_moisture, rain_detected)
+        
+        # Only send command if state changed
+        if new_pump_state != self.pump_state:
+            self.pump_state = new_pump_state
+            self.last_command_time = datetime.utcnow()
+            
+            logger.info(reason)
+            
+            # Return pump command
+            return {
+                "pump_cmd": "ON" if new_pump_state == 1 else "OFF",
+                "reason": reason
+            }
+        
+        return None
+    
+    def set_mode(self, mode: str) -> str:
+        """Set irrigation mode (auto/manual)"""
+        if mode in ["auto", "manual"]:
+            old_mode = self.mode
+            self.mode = mode
+            logger.info(f"Mode changed: {old_mode} → {mode}")
+            return f"Mode set to {mode}"
+        return "Invalid mode"
+    
+    def manual_pump_command(self, command: str) -> str:
+        """Handle manual pump commands"""
+        if self.mode != "manual":
+            return "Cannot control pump manually in AUTO mode"
+        
+        if command == "ON":
+            self.pump_state = 1
+            logger.info("MANUAL: Pump turned ON by dashboard")
+            return "Pump turned ON"
+        elif command == "OFF":
+            self.pump_state = 0
+            logger.info("MANUAL: Pump turned OFF by dashboard")
+            return "Pump turned OFF"
+        
+        return "Invalid command"
+
+# Initialize irrigation controller
+irrigation_controller = IrrigationController()
+
 # Offline Mode: Using static historical data because sensors are offline
 def load_historical_sensor_data() -> List[Dict[str, Any]]:
     """Load historical sensor data for offline mode demo"""
@@ -778,7 +880,60 @@ async def websocket_endpoint(websocket: WebSocket):
                 message = json.loads(data)
                 message_type = message.get("type", "unknown")
                 
-                if message_type == "ping":
+                # Handle ESP32 sensor data (with or without type field)
+                if message.get("source") == "esp32" or message_type == "sensor_data":
+                    # Handle sensor data from ESP32
+                    logger.info(f"Received sensor data from ESP32: Soil {message.get('soil', 0)}%, Rain {message.get('rain_detected', False)}")
+                    
+                    # Register ESP32 heartbeat for 5-minute updates
+                    if telegram_5min_updates:
+                        telegram_5min_updates.register_esp32_data_received()
+                        logger.debug("ESP32 heartbeat registered via WebSocket")
+                    
+                    # Update global sensor data
+                    global latest_sensor_data
+                    latest_sensor_data = {
+                        "soil_moisture": message.get("soil", 0),
+                        "temperature": message.get("temperature", 0),
+                        "humidity": message.get("humidity", 0),
+                        "rain_detected": message.get("rain_detected", False),
+                        "light_raw": message.get("light_raw", 0),
+                        "light_percent": message.get("light_percent", 0),
+                        "light_state": message.get("light_state", "normal"),
+                        "pump_status": message.get("pump", 0),
+                        "flow_rate": message.get("flow", 0),
+                        "total_liters": message.get("total", 0),
+                        "mode": irrigation_controller.mode,
+                        "source": "esp32",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                    
+                    # Store latest data in manager
+                    manager.latest_data = message
+                    
+                    # Process irrigation logic
+                    pump_command = irrigation_controller.process_sensor_data(message)
+                    
+                    # Send pump command to ESP32 if needed
+                    if pump_command:
+                        await manager.send_personal_message(
+                            json.dumps(pump_command),
+                            websocket
+                        )
+                        logger.info(f"Sent pump command to ESP32: {pump_command}")
+                    
+                    # Broadcast sensor update to all dashboard clients
+                    await manager.broadcast(json.dumps({
+                        "type": "sensor_update",
+                        "data": {
+                            **message,
+                            "mode": irrigation_controller.mode,
+                            "pump": irrigation_controller.pump_state
+                        },
+                        "timestamp": datetime.utcnow().isoformat()
+                    }))
+                
+                elif message_type == "ping":
                     # Respond to ping with pong
                     await manager.send_personal_message(
                         json.dumps({"type": "pong", "timestamp": datetime.utcnow().isoformat()}),
@@ -798,27 +953,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     }
                     await manager.send_personal_message(json.dumps(welcome), websocket)
                 
-                elif message_type == "sensor_data":
-                    # Handle sensor data from ESP32
-                    logger.info(f"Received sensor data: {message}")
-                    
-                    # Register ESP32 heartbeat for 5-minute updates
-                    if telegram_5min_updates:
-                        telegram_5min_updates.register_esp32_data_received()
-                        logger.info("ESP32 heartbeat registered via WebSocket")
-                    
-                    # Store latest data
-                    manager.latest_data = message
-                    
-                    # Broadcast to all connected clients
-                    await manager.broadcast(json.dumps({
-                        "type": "sensor_update",
-                        "data": message,
-                        "timestamp": datetime.utcnow().isoformat()
-                    }))
-                
                 else:
-                    logger.warning(f"Unknown WebSocket message type: {message_type}")
+                    logger.debug(f"Unknown WebSocket message type: {message_type}")
+                    # Don't log as warning for ESP32 data without type field
                     
             except json.JSONDecodeError:
                 logger.error(f"Invalid JSON received: {data}")
@@ -834,48 +971,139 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.error(f"WebSocket error: {e}")
         manager.disconnect(websocket)
 
-# Pump control endpoints for Telegram bot
-@app.post("/api/pump-on")
-async def pump_on():
-    """Turn pump ON via API"""
+# Pump control endpoints for dashboard and Telegram
+@app.post("/api/pump/on")
+async def api_pump_on():
+    """Turn pump ON via API (manual mode only)"""
     try:
-        # In production, this would send command to ESP32 via WebSocket
-        # For now, we'll simulate the response
-        logger.info("Pump turned ON via API")
+        result = irrigation_controller.manual_pump_command("ON")
         
-        # Broadcast to WebSocket clients
+        if irrigation_controller.mode == "manual":
+            # Broadcast pump command to ESP32
+            pump_cmd = {"pump_cmd": "ON"}
+            await manager.broadcast(json.dumps(pump_cmd))
+            logger.info("API: Pump ON command sent to ESP32")
+            
+            return {
+                "status": "success",
+                "message": result,
+                "mode": irrigation_controller.mode,
+                "pump_state": irrigation_controller.pump_state
+            }
+        else:
+            return {
+                "status": "error",
+                "message": result,
+                "mode": irrigation_controller.mode
+            }
+        
+    except Exception as e:
+        logger.error(f"Error in pump ON API: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/pump/off")
+async def api_pump_off():
+    """Turn pump OFF via API (manual mode only)"""
+    try:
+        result = irrigation_controller.manual_pump_command("OFF")
+        
+        if irrigation_controller.mode == "manual":
+            # Broadcast pump command to ESP32
+            pump_cmd = {"pump_cmd": "OFF"}
+            await manager.broadcast(json.dumps(pump_cmd))
+            logger.info("API: Pump OFF command sent to ESP32")
+            
+            return {
+                "status": "success",
+                "message": result,
+                "mode": irrigation_controller.mode,
+                "pump_state": irrigation_controller.pump_state
+            }
+        else:
+            return {
+                "status": "error",
+                "message": result,
+                "mode": irrigation_controller.mode
+            }
+        
+    except Exception as e:
+        logger.error(f"Error in pump OFF API: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/mode/auto")
+async def api_mode_auto():
+    """Set irrigation mode to AUTO"""
+    try:
+        result = irrigation_controller.set_mode("auto")
+        
+        # Broadcast mode change to all clients
         await manager.broadcast(json.dumps({
-            "type": "pump_command",
-            "command": "ON",
-            "timestamp": datetime.utcnow().isoformat(),
-            "source": "telegram"
+            "type": "mode_change",
+            "mode": "auto",
+            "timestamp": datetime.utcnow().isoformat()
         }))
         
-        return {"status": "success", "message": "Pump turned ON", "timestamp": datetime.utcnow().isoformat()}
+        logger.info("API: Mode set to AUTO")
+        
+        return {
+            "status": "success",
+            "message": result,
+            "mode": irrigation_controller.mode
+        }
+        
     except Exception as e:
-        logger.error(f"Error turning pump ON: {e}")
-        raise HTTPException(status_code=500, detail="Failed to turn pump ON")
+        logger.error(f"Error setting AUTO mode: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/mode/manual")
+async def api_mode_manual():
+    """Set irrigation mode to MANUAL"""
+    try:
+        result = irrigation_controller.set_mode("manual")
+        
+        # Broadcast mode change to all clients
+        await manager.broadcast(json.dumps({
+            "type": "mode_change",
+            "mode": "manual",
+            "timestamp": datetime.utcnow().isoformat()
+        }))
+        
+        logger.info("API: Mode set to MANUAL")
+        
+        return {
+            "status": "success",
+            "message": result,
+            "mode": irrigation_controller.mode
+        }
+        
+    except Exception as e:
+        logger.error(f"Error setting MANUAL mode: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/irrigation/status")
+async def get_irrigation_status():
+    """Get current irrigation controller status"""
+    return {
+        "mode": irrigation_controller.mode,
+        "pump_state": irrigation_controller.pump_state,
+        "last_command_time": irrigation_controller.last_command_time.isoformat(),
+        "thresholds": {
+            "dry": irrigation_controller.SOIL_DRY_THRESHOLD,
+            "wet": irrigation_controller.SOIL_WET_THRESHOLD
+        },
+        "sensor_data": latest_sensor_data
+    }
+
+# Legacy endpoints for backward compatibility
+@app.post("/api/pump-on")
+async def pump_on():
+    """Legacy endpoint - redirects to new API"""
+    return await api_pump_on()
 
 @app.post("/api/pump-off")
 async def pump_off():
-    """Turn pump OFF via API"""
-    try:
-        # In production, this would send command to ESP32 via WebSocket
-        # For now, we'll simulate the response
-        logger.info("Pump turned OFF via API")
-        
-        # Broadcast to WebSocket clients
-        await manager.broadcast(json.dumps({
-            "type": "pump_command",
-            "command": "OFF",
-            "timestamp": datetime.utcnow().isoformat(),
-            "source": "telegram"
-        }))
-        
-        return {"status": "success", "message": "Pump turned OFF", "timestamp": datetime.utcnow().isoformat()}
-    except Exception as e:
-        logger.error(f"Error turning pump OFF: {e}")
-        raise HTTPException(status_code=500, detail="Failed to turn pump OFF")
+    """Legacy endpoint - redirects to new API"""
+    return await api_pump_off()
 
 @app.get("/api/esp32-status")
 async def get_esp32_status():
