@@ -35,6 +35,7 @@ export default function useSmartFarmData() {
   const [predictedSoil, setPredictedSoil] = useState<number | null>(null);
   const [wsConnected, setWsConnected] = useState(false); // Track WebSocket connection
   const lastDataTimeRef = useRef<number>(0); // Track last ESP32 data time
+  const localModeRef = useRef<"auto" | "manual">("auto"); // Track local mode state
   
   // Check for ESP32 timeout (no data for 10 seconds = offline)
   useEffect(() => {
@@ -119,7 +120,7 @@ export default function useSmartFarmData() {
                   flow: typeof s.flow === "number" ? s.flow : 0,
                   totalLiters: typeof s.total === "number" ? s.total : 0,
                   pump: typeof s.pump === "number" ? s.pump : 0,
-                  mode: s.mode || "auto",
+                  mode: localModeRef.current, // Use local mode state, don't override from backend
                   rainExpected: Boolean(s.rain_expected),
                 };
                 
@@ -200,6 +201,8 @@ export default function useSmartFarmData() {
   }, []);
 
   const setMode = (newMode: "auto" | "manual") => {
+    console.log("🔄 Mode change requested:", newMode);
+    localModeRef.current = newMode; // Update local mode ref
     setData(prev => ({ ...prev, mode: newMode }));
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ mode: newMode }));

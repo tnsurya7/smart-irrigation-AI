@@ -955,6 +955,35 @@ async def websocket_endpoint(websocket: WebSocket):
                     }
                     await manager.send_personal_message(json.dumps(welcome), websocket)
                 
+                # Handle mode change from dashboard
+                elif "mode" in message:
+                    new_mode = message.get("mode")
+                    if new_mode in ["auto", "manual"]:
+                        irrigation_controller.set_mode(new_mode)
+                        logger.info(f"Dashboard mode change: {new_mode}")
+                        
+                        # Broadcast mode change to all clients
+                        await manager.broadcast(json.dumps({
+                            "type": "mode_change",
+                            "mode": new_mode,
+                            "timestamp": datetime.utcnow().isoformat()
+                        }))
+                
+                # Handle pump command from dashboard (manual mode only)
+                elif "pump_cmd" in message:
+                    pump_cmd = message.get("pump_cmd")
+                    if irrigation_controller.mode == "manual":
+                        result = irrigation_controller.manual_pump_command(pump_cmd)
+                        logger.info(f"Dashboard pump command: {pump_cmd} - {result}")
+                        
+                        # Broadcast pump command to ESP32
+                        await manager.broadcast(json.dumps({
+                            "pump_cmd": pump_cmd,
+                            "timestamp": datetime.utcnow().isoformat()
+                        }))
+                    else:
+                        logger.warning(f"Pump command rejected - not in manual mode")
+                
                 else:
                     logger.debug(f"Unknown WebSocket message type: {message_type}")
                     # Don't log as warning for ESP32 data without type field
