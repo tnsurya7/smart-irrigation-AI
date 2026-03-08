@@ -10,11 +10,6 @@
 
 A comprehensive IoT-based smart irrigation system with AI-powered predictions, real-time monitoring, and automated control. Built for production deployment with modern cloud infrastructure.
 
-### 🎯 **Live Demo**
-- **Frontend**: [https://smart-agriculture-dashboard.vercel.app](https://smart-agriculture-dashboard.vercel.app)
-- **API**: [https://smart-agriculture-backend.onrender.com](https://smart-agriculture-backend.onrender.com)
-- **WebSocket**: `wss://smart-agriculture-websocket.onrender.com/ws`
-
 ---
 
 ## 📊 **System Architecture**
