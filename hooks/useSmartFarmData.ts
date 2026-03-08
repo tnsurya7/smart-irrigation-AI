@@ -36,6 +36,7 @@ export default function useSmartFarmData() {
   const [wsConnected, setWsConnected] = useState(false); // Track WebSocket connection
   const lastDataTimeRef = useRef<number>(0); // Track last ESP32 data time
   const localModeRef = useRef<"auto" | "manual">("auto"); // Track local mode state
+  const localPumpStateRef = useRef<number>(0); // Track local pump state in manual mode
   
   // Check for ESP32 timeout (no data for 10 seconds = offline)
   useEffect(() => {
@@ -108,6 +109,11 @@ export default function useSmartFarmData() {
                 setConnection("connected");
                 lastDataTimeRef.current = Date.now();
                 
+                // In manual mode, use local pump state instead of ESP32 state
+                const pumpState = localModeRef.current === "manual" 
+                  ? localPumpStateRef.current 
+                  : (typeof s.pump === "number" ? s.pump : 0);
+                
                 const newData: SensorData = {
                   soil: typeof s.soil === "number" ? s.soil : 0,
                   temperature: typeof s.temperature === "number" ? s.temperature : 0,
@@ -119,7 +125,7 @@ export default function useSmartFarmData() {
                   lightStatus: s.light_state || "Normal Light",
                   flow: typeof s.flow === "number" ? s.flow : 0,
                   totalLiters: typeof s.total === "number" ? s.total : 0,
-                  pump: typeof s.pump === "number" ? s.pump : 0,
+                  pump: pumpState, // Use local pump state in manual mode
                   mode: localModeRef.current, // Use local mode state, don't override from backend
                   rainExpected: Boolean(s.rain_expected),
                 };
@@ -203,7 +209,11 @@ export default function useSmartFarmData() {
   const setMode = (newMode: "auto" | "manual") => {
     console.log("🔄 Mode change requested:", newMode);
     localModeRef.current = newMode; // Update local mode ref
+    
+    // When switching to auto mode, sync pump state from ESP32
+    // When switching to manual mode, keep current pump state
     setData(prev => ({ ...prev, mode: newMode }));
+    
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ mode: newMode }));
       console.log("📤 Mode command sent:", newMode);
@@ -213,8 +223,11 @@ export default function useSmartFarmData() {
   const sendPumpCommand = (command: "ON" | "OFF") => {
     console.log("🔄 Pump command requested:", command);
     
-    // Optimistic update - immediately update local state
+    // Update local pump state ref for manual mode
     const newPumpState = command === "ON" ? 1 : 0;
+    localPumpStateRef.current = newPumpState;
+    
+    // Optimistic update - immediately update local state
     setData(prev => ({ ...prev, pump: newPumpState }));
     
     // Send command to backend via WebSocket
