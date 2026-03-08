@@ -413,8 +413,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **SURYA KUMAR M** - Backend Development & AI Models  
 - **KARAN M** - Hardware Integration & ESP32 Programming
 
-**Project Guide**: [Faculty Name]  
-**Institution**: [College/University Name]
+**Project Guide**: [Mr.V.Gopinath]  
+**Institution**: [KSR Institute for Engineering and Technology]
 
 ---
 
@@ -428,18 +428,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 📞 **Support**
-
-- **Issues**: [GitHub Issues](https://github.com/tnsurya7/smart-irrigation-AI/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/tnsurya7/smart-irrigation-AI/discussions)
-- **Email**: [your-email@example.com]
-
----
-
 ## 🌟 **Star History**
 
 [![Star History Chart](https://api.star-history.com/svg?repos=tnsurya7/smart-irrigation-AI&type=Date)](https://star-history.com/#tnsurya7/smart-irrigation-AI&Date)
 
 ---
 
-**Made with ❤️ for sustainable agriculture and smart farming**
+
