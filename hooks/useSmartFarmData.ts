@@ -211,9 +211,18 @@ export default function useSmartFarmData() {
   };
 
   const sendPumpCommand = (command: "ON" | "OFF") => {
+    console.log("🔄 Pump command requested:", command);
+    
+    // Optimistic update - immediately update local state
+    const newPumpState = command === "ON" ? 1 : 0;
+    setData(prev => ({ ...prev, pump: newPumpState }));
+    
+    // Send command to backend via WebSocket
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ pump_cmd: command }));
-      console.log("📤 Pump command sent:", command);
+      console.log("📤 Pump command sent to backend:", command);
+    } else {
+      console.error("❌ WebSocket not connected - cannot send pump command");
     }
   };
 

@@ -981,6 +981,17 @@ async def websocket_endpoint(websocket: WebSocket):
                             "pump_cmd": pump_cmd,
                             "timestamp": datetime.utcnow().isoformat()
                         }))
+                        
+                        # Also broadcast updated sensor state to dashboard
+                        await manager.broadcast(json.dumps({
+                            "type": "sensor_update",
+                            "data": {
+                                **latest_sensor_data,
+                                "pump": irrigation_controller.pump_state,
+                                "mode": irrigation_controller.mode
+                            },
+                            "timestamp": datetime.utcnow().isoformat()
+                        }))
                     else:
                         logger.warning(f"Pump command rejected - not in manual mode")
                 
