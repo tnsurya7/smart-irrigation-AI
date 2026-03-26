@@ -191,7 +191,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
       
       try {
         // Use production backend with OpenRouter ChatGPT-4o integration
-        const apiUrl = "https://smart-agriculture-backend-my7c.onrender.com";
+        const apiUrl = "https://smart-agriculture-backend-x8qu.onrender.com";
         console.log("🤖 Sending message to production backend:", currentMessage);
         
         const response = await fetch(`${apiUrl}/api/chat`, {

@@ -137,20 +137,18 @@ app.add_middleware(
     allow_origins=[
         "https://smart-agriculture-dashboard-2025.vercel.app",
         "http://localhost:5173",  # Development
-        "https://smart-agriculture-backend-my7c.onrender.com"  # Health checks
+        "https://smart-agriculture-backend-x8qu.onrender.com"  # Health checks
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
     allow_headers=["*"],
 )
 
-# Trusted host middleware
+# Trusted host middleware - Allow all hosts to fix Render health check issues
+# Render's internal health checks come from internal IPs that don't match the domain
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"] if os.getenv('NODE_ENV') != 'production' else [
-        "smart-agriculture-backend-my7c.onrender.com",
-        "smart-agriculture-backend.render.com"  # backup
-    ]
+    allowed_hosts=["*"]  # Allow all hosts for Render compatibility
 )
 
 # Pydantic models

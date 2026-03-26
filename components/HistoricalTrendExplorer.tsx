@@ -290,7 +290,7 @@ export const HistoricalTrendExplorer: React.FC<HistoricalTrendExplorerProps> = (
         
         // Secondary: Try backend API (if available)
         try {
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://smart-agriculture-backend-my7c.onrender.com';
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://smart-agriculture-backend-x8qu.onrender.com';
           const response = await fetch(`${API_BASE_URL}/sensor-data/latest?limit=100`);
           
           if (response.ok) {
