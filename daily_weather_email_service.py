@@ -396,18 +396,15 @@ class DailyWeatherEmailService:
         <body>
             <div class="email-container">
                 
-                <!-- Header -->
+                <!-- Unified Header -->
                 <div class="header">
-                    <h1>
-                        <span>🌱</span>
-                        Weather Report
+                    <h1 style="font-size: 26px; margin: 0 0 12px 0; font-weight: 700; letter-spacing: 0.5px;">
+                        🌤️ Weather Report
                     </h1>
-                    <div class="date">{current_date}</div>
-                </div>
-                
-                <!-- Location -->
-                <div class="location-section">
-                    <p>📍 {city_name}</p>
+                    <div class="date" style="font-size: 15px; opacity: 0.95; margin-bottom: 10px;">📅 {current_date}</div>
+                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">🌱 Smart Farming, Better Harvest</div>
+                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 10px;">Have a nice day and a successful farming day ahead.</div>
+                    <div style="font-size: 13px; opacity: 0.9;">📍 {city_name}</div>
                 </div>
                 
                 <!-- Weather Cards -->
