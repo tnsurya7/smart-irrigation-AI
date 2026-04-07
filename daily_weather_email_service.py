@@ -399,16 +399,10 @@ class DailyWeatherEmailService:
                 <!-- Header -->
                 <div class="header">
                     <h1>
-                        <span>🌱📊</span>
-                        {time_of_day.title()} Weather Report
+                        <span>🌱</span>
+                        Weather Report
                     </h1>
-                    <div class="date">{current_date} - {current_time}</div>
-                </div>
-                
-                <!-- Greeting -->
-                <div class="greeting-section">
-                    <h2>{greeting_title}</h2>
-                    <p>{greeting_message}</p>
+                    <div class="date">{current_date}</div>
                 </div>
                 
                 <!-- Location -->
@@ -458,11 +452,8 @@ class DailyWeatherEmailService:
                 
                 <!-- Footer -->
                 <div class="footer">
-                    <h3>Smart Agriculture System</h3>
-                    <p>Location: {city_name}, Tamil Nadu</p>
-                    <div class="test-note">
-                        ✅ Updated template design with proper grid layout
-                    </div>
+                    <h3>🌱 Smart Agriculture System</h3>
+                    <p>📍 Location: {city_name}, Tamil Nadu</p>
                 </div>
                 
             </div>
