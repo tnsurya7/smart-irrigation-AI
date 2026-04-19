@@ -137,7 +137,7 @@ app.add_middleware(
     allow_origins=[
         "https://smart-agriculture-dashboard-2025.vercel.app",
         "http://localhost:5173",  # Development
-        "https://smart-agriculture-backend-x8qu.onrender.com"  # Health checks
+        "https://smart-irrigation-ai.onrender.com"  # Health checks
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],

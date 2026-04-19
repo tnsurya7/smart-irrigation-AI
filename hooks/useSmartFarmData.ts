@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { SensorData } from "../types";
 
 // Production WebSocket configuration
-const WS_URL = import.meta.env.VITE_WS_URL || "wss://smart-agriculture-backend-x8qu.onrender.com/ws";
+const WS_URL = import.meta.env.VITE_WS_URL || "wss://smart-irrigation-ai.onrender.com/ws";
 
 // Helper function for light status
 function getLightStatus(raw: number): string {

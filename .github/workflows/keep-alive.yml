@@ -12,4 +12,4 @@ jobs:
       - name: Ping Render Backend
         run: |
           echo "Pinging Render backend..."
-          curl -m 30 https://smart-agriculture-backend-my7c.onrender.com/health || echo "Ping failed"
+          curl -m 30 https://smart-irrigation-ai.onrender.com/health || echo "Ping failed"

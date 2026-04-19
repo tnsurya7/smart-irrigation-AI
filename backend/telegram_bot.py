@@ -19,7 +19,7 @@ router = APIRouter(prefix="/telegram", tags=["telegram"])
 
 # Environment variables
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-BACKEND_URL = os.getenv("BACKEND_URL", "https://smart-agriculture-backend-x8qu.onrender.com")
+BACKEND_URL = os.getenv("BACKEND_URL", "https://smart-irrigation-ai.onrender.com")
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 AUTHORIZED_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "5707565347")
 
