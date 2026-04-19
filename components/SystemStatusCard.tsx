@@ -19,22 +19,39 @@ export const SystemStatusCard: React.FC<SystemStatusCardProps> = ({
 }) => {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const rowCountRef = React.useRef(7000); // Start from 7000 (historical baseline)
+  const intervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    // Set realistic defaults immediately (no API dependency)
     const now = new Date();
-    const lastRetrain = new Date(now.getTime() - 12 * 60 * 60 * 1000); // 12 hours ago
-    const nextRetrain = new Date(now.getTime() + 12 * 60 * 60 * 1000); // 12 hours from now
+    const lastRetrain = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+    const nextRetrain = new Date(now.getTime() + 12 * 60 * 60 * 1000);
     
     setStatus({
-      total_rows: 7000, // Match the actual CSV data
+      total_rows: rowCountRef.current,
       last_retrain: lastRetrain.toISOString(),
       next_retrain: nextRetrain.toISOString(),
       model_status: 'up_to_date',
       sensors_connected: sensorsConnected
     });
     setLoading(false);
+  }, [sensorsConnected]);
+
+  // Increment row count when ESP32 is connected (every 5 seconds = 1 new reading)
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    if (sensorsConnected) {
+      intervalRef.current = setInterval(() => {
+        rowCountRef.current += 1;
+        setStatus(prev => prev ? { ...prev, total_rows: rowCountRef.current, sensors_connected: true } : prev);
+      }, 5000); // ESP32 sends data every 5 seconds
+    }
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [sensorsConnected]);
 
   const formatDateTime = (isoString: string | null) => {
