@@ -612,7 +612,7 @@ async def get_latest_sensor_data(limit: int = 100):
         return {"data": result.data}
         
     except Exception as e:
-        logger.error(f"Error fetching sensor data: {e}")
+        logger.warning(f"Supabase unavailable, using fallback data: {e}")
         # Fallback to historical data instead of returning 500 error
         try:
             historical_data = load_historical_sensor_data()
@@ -663,7 +663,7 @@ async def get_sensor_data_range(start_date: str, end_date: str):
         return {"data": result.data}
         
     except Exception as e:
-        logger.error(f"Error fetching sensor data range: {e}")
+        logger.warning(f"Supabase unavailable, using fallback data: {e}")
         # Fallback to historical data instead of returning 500 error
         try:
             historical_data = load_historical_sensor_data()
