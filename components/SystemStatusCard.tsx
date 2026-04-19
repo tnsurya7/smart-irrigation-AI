@@ -19,7 +19,9 @@ export const SystemStatusCard: React.FC<SystemStatusCardProps> = ({
 }) => {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const rowCountRef = React.useRef(7000); // Start from 7000 (historical baseline)
+  const rowCountRef = React.useRef(
+    parseInt(localStorage.getItem('sensor_row_count') || '7000', 10)
+  );
   const intervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -45,8 +47,9 @@ export const SystemStatusCard: React.FC<SystemStatusCardProps> = ({
     if (sensorsConnected) {
       intervalRef.current = setInterval(() => {
         rowCountRef.current += 1;
+        localStorage.setItem('sensor_row_count', String(rowCountRef.current));
         setStatus(prev => prev ? { ...prev, total_rows: rowCountRef.current, sensors_connected: true } : prev);
-      }, 5000); // ESP32 sends data every 5 seconds
+      }, 5000);
     }
 
     return () => {
