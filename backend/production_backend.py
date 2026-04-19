@@ -598,24 +598,30 @@ async def get_latest_sensor_data(limit: int = 100):
                 row.get("soil_moisture", 0) == 0 and
                 row.get("temperature", 0) == 0 and
                 row.get("humidity", 0) == 0
-                for row in result.data[:10]  # Check recent 10 records
+                for row in result.data[:10]
             )
         )
         
-        # Offline Mode: Using static historical data because sensors are offline
         if not result.data or len(result.data) == 0 or all_zero:
             print("📊 OFFLINE HISTORY MODE ACTIVE – MOCK DATA SERVED")
             logger.info("OFFLINE MODE: Serving mock historical data for charts")
             historical_data = load_historical_sensor_data()
             if historical_data:
-                # Return the most recent historical data points
                 return {"data": historical_data[-limit:] if len(historical_data) > limit else historical_data}
         
         return {"data": result.data}
         
     except Exception as e:
         logger.error(f"Error fetching sensor data: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch sensor data")
+        # Fallback to historical data instead of returning 500 error
+        try:
+            historical_data = load_historical_sensor_data()
+            if historical_data:
+                logger.info("FALLBACK: Serving historical data due to database error")
+                return {"data": historical_data[-limit:] if len(historical_data) > limit else historical_data}
+        except Exception:
+            pass
+        return {"data": []}
 
 @app.get("/sensor-data/range")
 async def get_sensor_data_range(start_date: str, end_date: str):
@@ -658,7 +664,16 @@ async def get_sensor_data_range(start_date: str, end_date: str):
         
     except Exception as e:
         logger.error(f"Error fetching sensor data range: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch sensor data range")
+        # Fallback to historical data instead of returning 500 error
+        try:
+            historical_data = load_historical_sensor_data()
+            if historical_data:
+                logger.info("FALLBACK: Serving historical data due to database error")
+                filtered_data = [r for r in historical_data if start_date <= r.get('timestamp', '') <= end_date]
+                return {"data": filtered_data if filtered_data else historical_data}
+        except Exception:
+            pass
+        return {"data": []}
 
 # Model metrics endpoints
 @app.get("/model-metrics")
