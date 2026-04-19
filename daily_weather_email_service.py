@@ -135,7 +135,6 @@ class DailyWeatherEmailService:
         
         weather_icon_url = f"https://openweathermap.org/img/wn/{icon}@2x.png"
         current_date = datetime.now().strftime("%A, %B %d, %Y")
-        current_time = datetime.now().strftime("%I:%M %p")
         
         # Different greetings based on time of day
         if time_of_day == "morning":
