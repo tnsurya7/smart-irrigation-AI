@@ -89,7 +89,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               </span>
             </div>
             <div className="text-slate-500 dark:text-slate-400">
-              Trained on 2000 samples • Auto-retrains every 24 hours
+              Trained on 10000 samples • Auto-retrains every 24 hours
             </div>
           </div>
         </div>
