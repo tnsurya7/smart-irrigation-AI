@@ -858,8 +858,8 @@ async def get_system_status():
         return {"data": result.data}
         
     except Exception as e:
-        logger.error(f"Error fetching system status: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch system status")
+        logger.warning(f"Supabase unavailable for system status: {e}")
+        return {"data": []}
 
 # WebSocket endpoint with origin validation
 @app.websocket("/ws")
